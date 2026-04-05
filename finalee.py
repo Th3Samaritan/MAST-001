@@ -773,7 +773,7 @@ def build_tt_profile(NT, QT, TT):
         fig.add_annotation(x=tx, y=ty, text=text, showarrow=False,
                            font=dict(size=10, color=col, family="Rajdhani, sans-serif"),
                            align="center", bgcolor="rgba(8,13,30,0.6)",
-                           bordercolor=col+"55", borderwidth=1, borderpad=5)
+                           bordercolor=col, borderwidth=1, borderpad=5)
 
     fig.update_layout(**_PLOTLY_BASE)
     fig.update_layout(
@@ -1126,43 +1126,187 @@ with tab_phase:
 | TT **above A₁** | ✗ Steel re-austenitises — properties lost |
             """)
 
+def build_combined_simulation(C, NT, QT, TT):
+    """
+    Builds a synchronized 3D Phase Journey and Microstructure Simulation in Plotly.
+    Uses 'scene' for 3D and 'xy' for the 2D Microscopic view.
+    """
+    # ── Time path definition (85 frames) ──
+    times = []
+    temps = []
+    
+    # 0 to 20: Heating
+    for i in range(21):
+        times.append(i); temps.append(25 + (NT-25)*(i/20.0))
+    # 20 to 30: Holding at NT
+    for i in range(1, 11):
+        times.append(20 + i); temps.append(NT)
+    # 30 to 45: Quenching to 25
+    for i in range(1, 16):
+        times.append(30 + i); temps.append(NT - (NT-25)*(i/15.0))
+    # 45 to 60: Heating to TT
+    for i in range(1, 16):
+        times.append(45 + i); temps.append(25 + (TT-25)*(i/15.0))
+    # 60 to 70: Hold at TT
+    for i in range(1, 11):
+        times.append(60 + i); temps.append(TT)
+    # 70 to 85: Cool to 25
+    for i in range(1, 16):
+        times.append(70 + i); temps.append(TT - (TT-25)*(i/15.0))
+        
+    total_frames = len(times)
+    a3_c = a3_temp(0.40)
+    
+    # ── Subplots ──
+    fig = make_subplots(
+        rows=1, cols=2, column_widths=[0.65, 0.35],
+        specs=[[{"type": "scene"}, {"type": "xy"}]],
+        subplot_titles=["<b>3D Thermal Phase Journey</b>", "<b>Microstructure Simulation (2D)</b>"]
+    )
+    
+    # === TRACE 0: A1 Surface ===
+    fig.add_trace(go.Surface(
+        x=[[0, 1.5], [0, 1.5]], y=[[0, 0], [85, 85]], z=[[A1, A1], [A1, A1]],
+        opacity=0.3, colorscale=[[0, "#e74c3c"], [1, "#e74c3c"]],
+        showscale=False, hoverinfo="skip", name="A1"
+    ), row=1, col=1)
+    
+    # === TRACE 1: A3 Surface ===
+    fig.add_trace(go.Surface(
+        x=[[0, 0.8], [0, 0.8]], y=[[0, 0], [85, 85]],
+        z=[[910, 910 - 246*0.8], [910, 910 - 246*0.8]],
+        opacity=0.2, colorscale=[[0, "#4a90d9"], [1, "#4a90d9"]],
+        showscale=False, hoverinfo="skip", name="A3"
+    ), row=1, col=1)
+    
+    # === TRACE 2: The full faint path ===
+    fig.add_trace(go.Scatter3d(
+        x=[C]*total_frames, y=times, z=temps, mode="lines",
+        line=dict(color="rgba(255,255,255,0.15)", width=2),
+        hoverinfo="skip", showlegend=False
+    ), row=1, col=1)
+
+    # === TRACE 3: Glowing dot ===
+    fig.add_trace(go.Scatter3d(
+        x=[C], y=[times[0]], z=[temps[0]], mode="markers",
+        marker=dict(size=8, color="#f1c40f", symbol="circle", line=dict(color="#ffffff", width=2)),
+        showlegend=False
+    ), row=1, col=1)
+    
+    # === TRACE 4: Trailing line ===
+    fig.add_trace(go.Scatter3d(
+        x=[C], y=[times[0]], z=[temps[0]], mode="lines",
+        line=dict(color="#f39c12", width=6), showlegend=False
+    ), row=1, col=1)
+
+    # === TRACE 5: Microstructure ===
+    np.random.seed(42)
+    n_pts = 400
+    r = np.sqrt(np.random.rand(n_pts))
+    theta = np.random.rand(n_pts) * 2 * np.pi
+    x_base, y_base = r * np.cos(theta), r * np.sin(theta)
+
+    fig.add_trace(go.Scatter(
+        x=x_base, y=y_base, mode="markers",
+        marker=dict(size=6, color="#4ddb82", opacity=0.8),
+        showlegend=False
+    ), row=1, col=2)
+    
+    # === Animation Frames ===
+    frames = []
+    for i in range(total_frames):
+        t, T = times[i], temps[i]
+        
+        colors, sizes = ["#4ddb82"] * n_pts, [6] * n_pts
+        jitter = 0.0
+        
+        if 0 <= i <= 30: # Heating
+            prog = min(1.0, max(0.0, (T - 723) / (abs(a3_c - 723)+1))) if T > 723 else 0.0
+            colors = ["#f1c40f" if np.random.rand() < prog else "#4ddb82" for _ in range(n_pts)]
+            jitter = prog * 0.03
+            if i >= 20: 
+                colors, sizes, jitter = ["#f1c40f"] * n_pts, [8] * n_pts, 0.05
+        elif 30 < i <= 45: # Quench
+            colors, sizes, jitter = ["#3498db"] * n_pts, [3] * n_pts, 0.15 # Needles
+        else: # Temper
+            prog = min(1.0, (i - 45) / 25.0) 
+            for j in range(n_pts):
+                if j % 6 == 0 and prog > 0.3:
+                    colors[j], sizes[j] = "#e74c3c", 4 # Carbides
+                else:
+                    colors[j], sizes[j] = "#56b4d3", 3
+            jitter = 0.03
+
+        x_curr = x_base + (np.random.normal(0, jitter, n_pts) if jitter > 0 else 0)
+        y_curr = y_base + (np.random.normal(0, jitter, n_pts) if jitter > 0 else 0)
+
+        frames.append(go.Frame(
+            data=[
+                go.Scatter3d(x=[C], y=[t], z=[T]),
+                go.Scatter3d(x=[C]*(i+1), y=times[:i+1], z=temps[:i+1]),
+                go.Scatter(x=x_curr, y=y_curr, marker=dict(color=colors, size=sizes))
+            ],
+            traces=[3, 4, 5], name=str(i)
+        ))
+
+    fig.frames = frames
+    
+    # Styling
+    fig.update_layout(**_PLOTLY_BASE)
+    fig.update_layout(
+        scene=dict(
+            xaxis_title="Carbon (%)", yaxis_title="Time", zaxis_title="Temp (°C)",
+            xaxis=dict(range=[0, 1.5], backgroundcolor="rgba(13,25,50,0.8)", gridcolor="rgba(255,255,255,0.1)"),
+            yaxis=dict(range=[0, 85], backgroundcolor="rgba(13,25,50,0.8)", gridcolor="rgba(255,255,255,0.1)"),
+            zaxis=dict(range=[0, max(NT, 1000)], backgroundcolor="rgba(8,13,30,0.9)", gridcolor="rgba(255,255,255,0.1)"),
+            camera=dict(eye=dict(x=1.8, y=-1.5, z=0.5))
+        ),
+        xaxis2=dict(range=[-1.5, 1.5], showgrid=False, zeroline=False, showticklabels=False),
+        yaxis2=dict(range=[-1.5, 1.5], showgrid=False, zeroline=False, showticklabels=False),
+        height=600,
+        margin=dict(l=20, r=20, t=50, b=40)
+    )
+    
+    ANIM_BUTTON_STYLE = dict(bgcolor="rgba(8,13,30,0.90)", font=dict(color="white", size=12), bordercolor="rgba(76,114,176,0.45)")
+    fig.update_layout(
+        updatemenus=[dict(
+            buttons=[
+                dict(args=[None, {"frame":{"duration":100,"redraw":True},"fromcurrent":True,"transition":{"duration":0}}],
+                     label="▶  Play Animation", method="animate"),
+                dict(args=[[None], {"frame":{"duration":0},"mode":"immediate","transition":{"duration":0}}],
+                     label="⏸  Pause", method="animate"),
+            ],
+            direction="left", pad={"r":10,"t":12}, showactive=False, type="buttons",
+            x=0.05, xanchor="left", y=-0.05, yanchor="top", **ANIM_BUTTON_STYLE
+        )]
+    )
+    return fig
+
+
 # ────────────────────────────────────────────────────────────────────────────
 #  TAB 3  ─  PROCESS ANIMATION
 # ────────────────────────────────────────────────────────────────────────────
 with tab_anim:
-    st.markdown(html_section_header("Heat Treatment Process Animation",
-                "Watch the steel traverse the Fe-C diagram · Press ▶ Play below the chart", "🎬"),
+    st.markdown(html_section_header("Heat Treatment: 3D Journey & Microstructure Evolution",
+                "Watch the steel traverse the 3D phase envelope alongside atomic/grain simulations.", "🎬"),
                 unsafe_allow_html=True)
 
-    st.plotly_chart(build_phase_diagram(C, NT, QT, TT, animated=True),
-                    use_container_width=True)
+    st.plotly_chart(build_combined_simulation(C, NT, QT, TT), use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown(html_section_header("Temperature-Time Profile",
-                "Schematic heat treatment cycle", "📈"),
-                unsafe_allow_html=True)
-    st.plotly_chart(build_tt_profile(NT, QT, TT), use_container_width=True)
-
-    with st.expander("📖  Metallurgical explanation of each stage"):
+    with st.expander("📖  Explanation of the Simulation"):
         st.markdown(f"""
-**Stage 1 — Normalising at {NT}°C**
-- Steel heated above A₃ ≈ {a3_temp(C):.0f}°C (for C = {C:.3f}%)
-- Transforms entirely to **austenite (γ)** — face-centred cubic (FCC), dissolves up to 2.11% C
-- Carbides dissolve; grain structure homogenises and grain size is refined
+**Stage 1 — Normalising at {NT}°C** (Left 3D: Traverses A1/A3 boundaries · Right 2D: Yellow Grains)
+- The glowing particle moves above the translucent A1 (723°C) and A3 planes.
+- Microstructure: Initial Ferrite+Pearlite (green/grey) dissolves into homogenous Austenite grains (yellow).
 
-**Stage 2 — Quenching (rapid cooling)**
-- Cooling is too fast for diffusion → austenite cannot decompose to ferrite+pearlite
-- Instead it shears into **martensite** — a supersaturated body-centred tetragonal (BCT) phase
-- Martensite is extremely hard but brittle; it is *not* on the equilibrium diagram (note the dot jumps to the ferrite+pearlite region — that is the equilibrium prediction, not the actual microstructure)
+**Stage 2 — Quenching** (Left 3D: High-speed drop · Right 2D: Fine Blue Needles)
+- Cooling is too fast for diffusion.
+- Microstructure: Austenite violently shears into Martensite, revealing fine, sharp structural points.
 
-**Stage 3 — Tempering at {TT}°C**
-- Reheating below A₁ (723°C) — no phase change by equilibrium, but kinetics matter
-- Carbon atoms diffuse out of the martensite lattice, precipitating as fine carbide particles
-- Result: **tempered martensite** — significantly better toughness/ductility while retaining most hardness
-
-**Final microstructure**
-- Tempered martensite with fine carbide dispersion
-- Mechanical properties: Tensile ≈ predicted value, Hardness ≈ predicted value, Fatigue life ≈ predicted value
+**Stage 3 — Tempering at {TT}°C** (Left 3D: Reheats below A1 · Right 2D: Red Carbides precipitate)
+- Reheating restores ductility while maintaining hardness.
+- Microstructure: Martensite softens (light blue) and precipitates fine Carbide particles (red dots).
         """)
 
 # ────────────────────────────────────────────────────────────────────────────
