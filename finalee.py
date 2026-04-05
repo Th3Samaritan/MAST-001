@@ -260,30 +260,91 @@ def html_phase_badge(phase):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  MODEL
+#  MODEL  (v2: per-target models  ·  v1 fallback: single multi-output model)
 # ══════════════════════════════════════════════════════════════════════════════
+import json as json_lib
+
+TARGETS = ["Tensile", "Hardness", "Fatigue"]
+BASE_FEATURES = ["C","Si","Mn","P","S","Ni","Cr","Cu","Mo","NT","TT","QT"]
+
 @st.cache_resource(show_spinner="Loading model…")
-def load_model():
-    m = XGBRegressor()
+def load_models():
+    """Try v2 per-target models first, fall back to v1 single model."""
+    models_dir = os.path.join(os.path.dirname(__file__), "models")
+    metrics = None
+
+    # ── Try v2 per-target models ──────────────────────────────────────
+    v2_paths = {t: os.path.join(models_dir, f"xgb_{t.lower()}.json") for t in TARGETS}
+    if all(os.path.exists(p) for p in v2_paths.values()):
+        per_target = {}
+        for t, p in v2_paths.items():
+            m = XGBRegressor()
+            m.load_model(p)
+            per_target[t] = m
+        # Load metrics if available
+        metrics_path = os.path.join(models_dir, "model_metrics.json")
+        if os.path.exists(metrics_path):
+            with open(metrics_path) as f:
+                metrics = json_lib.load(f)
+        return {"mode": "v2", "models": per_target, "metrics": metrics}
+
+    # ── Fallback: v1 single model ─────────────────────────────────────
     if os.path.exists("xgb_model.json"):
-        m.load_model("xgb_model.json")
-    elif os.path.exists("best_xgb_model.pkl"):
+        m = XGBRegressor(); m.load_model("xgb_model.json")
+        return {"mode": "v1", "models": m, "metrics": None}
+    if os.path.exists("best_xgb_model.pkl"):
         import joblib
-        m = joblib.load("best_xgb_model.pkl")
+        return {"mode": "v1", "models": joblib.load("best_xgb_model.pkl"), "metrics": None}
+
+    st.error("⚠️  Model file not found. Run the training notebook first.")
+    st.stop()
+
+model_pack    = load_models()
+MODEL_MODE    = model_pack["mode"]
+MODEL_METRICS = model_pack["metrics"]
+
+# Feature order depends on model version
+if MODEL_MODE == "v2" and MODEL_METRICS and "features" in MODEL_METRICS:
+    FEATURE_ORDER = MODEL_METRICS["features"]
+else:
+    FEATURE_ORDER = BASE_FEATURES
+
+def add_engineered_features(inp):
+    """Add CE, DeltaT, C_x_Cr if using v2 models."""
+    if MODEL_MODE != "v2":
+        return inp
+    inp["CE"]     = inp["C"] + inp["Mn"]/6 + (inp["Cr"]+inp["Mo"])/5 + (inp["Ni"]+inp["Cu"])/15
+    inp["DeltaT"] = inp["NT"] - inp["TT"]
+    inp["C_x_Cr"] = inp["C"] * inp["Cr"]
+    return inp
+
+def predict_properties(inp_dict):
+    """Predict using v2 per-target or v1 multi-output model."""
+    inp = add_engineered_features(inp_dict.copy())
+    df  = pd.DataFrame([inp])[FEATURE_ORDER]
+
+    if MODEL_MODE == "v2":
+        models = model_pack["models"]
+        tensile  = max(0.0, float(models["Tensile"].predict(df)[0]))
+        hardness = max(0.0, float(models["Hardness"].predict(df)[0]))
+        fatigue  = max(0.0, float(models["Fatigue"].predict(df)[0]))
     else:
-        st.error("⚠️  Model file not found. Run the training notebook first.")
-        st.stop()
-    return m
+        raw = model_pack["models"].predict(df)
+        tensile  = max(0.0, float(raw[0][0]))
+        hardness = max(0.0, float(raw[0][1]))
+        fatigue  = max(0.0, float(raw[0][2]))
+    return tensile, hardness, fatigue
 
-model        = load_model()
-FEATURE_ORDER = ["C","Si","Mn","P","S","Ni","Cr","Cu","Mo","NT","TT","QT"]
-
-TRAINING_RANGES = {
-    "NT":(825,900), "QT":(825,870), "TT":(550,680),
-    "C":(0.30,0.50), "Si":(0.10,1.50), "Mn":(0.50,1.50),
-    "P":(0.005,0.040), "S":(0.005,0.150),
-    "Ni":(0.00,0.50), "Cr":(0.00,0.50), "Cu":(0.00,0.50), "Mo":(0.00,0.50),
-}
+# Load training ranges from metrics or use defaults
+if MODEL_METRICS and "training_ranges" in MODEL_METRICS:
+    TRAINING_RANGES = {k: (v["min"], v["max"]) for k, v in MODEL_METRICS["training_ranges"].items()}
+else:
+    TRAINING_RANGES = {
+        "NT":(825,900), "QT":(825,870), "TT":(550,680),
+        "C":(0.30,0.50), "Si":(0.10,1.50), "Mn":(0.50,1.50),
+        "P":(0.005,0.040), "S":(0.005,0.150),
+        "Ni":(0.00,0.50), "Cr":(0.00,0.50), "Cu":(0.00,0.50), "Mo":(0.00,0.50),
+    }
 
 PROP_RANGES = {
     "Tensile":  (400,  1800),
@@ -379,8 +440,8 @@ def build_gauge_charts(tensile, hardness, fatigue):
             ),
         ), row=1, col=col_i)
 
+    fig.update_layout(**_PLOTLY_BASE)
     fig.update_layout(
-        **_PLOTLY_BASE,
         height=260,
         margin=dict(l=30, r=30, t=40, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
@@ -420,8 +481,8 @@ def build_radar_chart(tensile, hardness, fatigue):
         line=dict(color="rgba(255,255,255,0.2)", width=1, dash="dot"),
         name="Dataset avg.",
     ))
+    fig.update_layout(**_PLOTLY_BASE)
     fig.update_layout(
-        **_PLOTLY_BASE,
         polar=dict(
             bgcolor="rgba(8,13,30,0.5)",
             radialaxis=dict(range=[0,100], ticksuffix="%",
@@ -525,8 +586,8 @@ def build_phase_diagram(C, NT, QT, TT, animated=False):
 
     # ── Layout ──────────────────────────────────────────────────────────────
     b_margin = 150 if animated else 50
+    fig.update_layout(**_PLOTLY_BASE)
     fig.update_layout(
-        **_PLOTLY_BASE,
         xaxis=dict(title="Carbon Content (wt%)", range=[0,MAX_C],
                    gridcolor="rgba(255,255,255,0.05)", showgrid=True,
                    color="#c8d8ff", zeroline=False),
@@ -714,8 +775,8 @@ def build_tt_profile(NT, QT, TT):
                            align="center", bgcolor="rgba(8,13,30,0.6)",
                            bordercolor=col+"55", borderwidth=1, borderpad=5)
 
+    fig.update_layout(**_PLOTLY_BASE)
     fig.update_layout(
-        **_PLOTLY_BASE,
         xaxis=dict(title="Process Stage (schematic time)", showticklabels=False,
                    range=[-0.2, 8.8], showgrid=False, zeroline=False, color="#c8d8ff"),
         yaxis=dict(title="Temperature (°C)", range=[0, max(NT,QT)*1.18],
@@ -804,7 +865,7 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════════════════════
 #  HERO BANNER
 # ══════════════════════════════════════════════════════════════════════════════
-st.markdown("""
+_hero_html = """
 <div style="
     background: linear-gradient(135deg, #0d1f3c 0%, #112240 40%, #0d2137 70%, #08111e 100%);
     border: 1px solid rgba(76,114,176,0.30);
@@ -839,15 +900,28 @@ st.markdown("""
   </div>
 
   <div style="display:flex;flex-wrap:wrap;gap:0;margin-top:14px;">
-""" +
-html_stat_pill("Model", "XGBoost", "#4c72b0") +
-html_stat_pill("R² Score", "97.35%", "#50c878") +
-html_stat_pill("Training samples", "289", "#dd8452") +
-html_stat_pill("Outputs", "Tensile · Hardness · Fatigue", "#00b4d8") +
 """
+# Dynamic stats from model metrics
+if MODEL_METRICS:
+    avg_r2 = sum(m["R²"] for m in MODEL_METRICS["metrics"]) / len(MODEL_METRICS["metrics"])
+    n_train = MODEL_METRICS.get("n_train", 289)
+    r2_str  = f"{avg_r2*100:.2f}%"
+    _hero_html += html_stat_pill("Model", "XGBoost v2 (per-target)", "#4c72b0")
+    _hero_html += html_stat_pill("Avg R²", r2_str, "#50c878")
+    _hero_html += html_stat_pill("Training samples", str(n_train), "#dd8452")
+    for m in MODEL_METRICS["metrics"]:
+        _hero_html += html_stat_pill(f'{m["Target"]} R²', f'{m["R²"]*100:.1f}%', "#00b4d8")
+else:
+    _hero_html += html_stat_pill("Model", "XGBoost", "#4c72b0")
+    _hero_html += html_stat_pill("R² Score", "97.35%", "#50c878")
+    _hero_html += html_stat_pill("Training samples", "289", "#dd8452")
+    _hero_html += html_stat_pill("Outputs", "Tensile · Hardness · Fatigue", "#00b4d8")
+
+_hero_html += """
   </div>
 </div>
-""", unsafe_allow_html=True)
+"""
+st.html(_hero_html)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  RUN PREDICTION
@@ -856,10 +930,7 @@ result = None
 if predict_clicked:
     inp = dict(C=C,Si=Si,Mn=Mn,P=P,S=S,Ni=Ni,Cr=Cr,Cu=Cu,Mo=Mo,NT=NT,TT=TT,QT=QT)
     ood = check_ood({k:inp[k] for k in TRAINING_RANGES})
-    raw = model.predict(pd.DataFrame([inp])[FEATURE_ORDER])
-    tensile  = max(0.0, float(raw[0][0]))
-    hardness = max(0.0, float(raw[0][1]))
-    fatigue  = max(0.0, float(raw[0][2]))
+    tensile, hardness, fatigue = predict_properties(inp)
     result   = (tensile, hardness, fatigue, ood)
     st.session_state["result"] = result
 elif "result" in st.session_state:
@@ -868,10 +939,13 @@ elif "result" in st.session_state:
 # ══════════════════════════════════════════════════════════════════════════════
 #  TABS
 # ══════════════════════════════════════════════════════════════════════════════
-tab_res, tab_phase, tab_anim = st.tabs([
+tab_res, tab_phase, tab_anim, tab_sens, tab_batch, tab_data = st.tabs([
     "📊  Prediction Results",
     "🔬  Phase Diagram",
     "🎬  Process Animation",
+    "📈  Sensitivity Analysis",
+    "📁  Batch Predictions",
+    "🗃️  Dataset Explorer",
 ])
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -1005,6 +1079,20 @@ with tab_res:
                 })
                 st.dataframe(ht_df, hide_index=True, use_container_width=True)
 
+        # ── Export prediction ────────────────────────────────────────────
+        export_row = {
+            "C": C, "Si": Si, "Mn": Mn, "P": P, "S": S,
+            "Ni": Ni, "Cr": Cr, "Cu": Cu, "Mo": Mo,
+            "NT": NT, "QT": QT, "TT": TT,
+            "Tensile (MPa)": round(tensile, 1),
+            "Hardness (HB)": round(hardness, 1),
+            "Fatigue (MPa)": round(fatigue, 1),
+        }
+        csv_single = pd.DataFrame([export_row]).to_csv(index=False)
+        st.download_button("⬇️  Download Prediction CSV", csv_single,
+                           "steelsight_prediction.csv", "text/csv",
+                           use_container_width=True)
+
 # ────────────────────────────────────────────────────────────────────────────
 #  TAB 2  ─  PHASE DIAGRAM
 # ────────────────────────────────────────────────────────────────────────────
@@ -1076,3 +1164,336 @@ with tab_anim:
 - Tempered martensite with fine carbide dispersion
 - Mechanical properties: Tensile ≈ predicted value, Hardness ≈ predicted value, Fatigue life ≈ predicted value
         """)
+
+# ────────────────────────────────────────────────────────────────────────────
+#  TAB 4  ─  SENSITIVITY ANALYSIS
+# ────────────────────────────────────────────────────────────────────────────
+with tab_sens:
+    st.markdown(html_section_header("Sensitivity Analysis",
+                "Explore how each input affects predicted properties", "📈"),
+                unsafe_allow_html=True)
+
+    if result is None:
+        st.info("🔮  Run a prediction first — sensitivity analysis uses the current sidebar inputs as the baseline.")
+    else:
+        base_inp = dict(C=C, Si=Si, Mn=Mn, P=P, S=S, Ni=Ni, Cr=Cr, Cu=Cu, Mo=Mo,
+                        NT=NT, TT=TT, QT=QT)
+        base_t, base_h, base_f = result[0], result[1], result[2]
+
+        # ── One-at-a-time sensitivity ───────────────────────────────────
+        sens_feature = st.selectbox(
+            "Select a feature to vary",
+            BASE_FEATURES,
+            index=0,
+            help="All other features stay at their current sidebar values."
+        )
+
+        feat_val = base_inp[sens_feature]
+        is_temp = sens_feature in ("NT", "QT", "TT")
+
+        if is_temp:
+            low  = max(400, feat_val - 200)
+            high = min(1000, feat_val + 200)
+            sweep = np.linspace(low, high, 50)
+        else:
+            low  = max(0.0, feat_val * 0.2)
+            high = feat_val * 3 if feat_val > 0 else 0.5
+            sweep = np.linspace(low, high, 50)
+
+        sweep_results = {"x": [], "Tensile": [], "Hardness": [], "Fatigue": []}
+        for v in sweep:
+            test_inp = base_inp.copy()
+            test_inp[sens_feature] = float(v)
+            t, h, f = predict_properties(test_inp)
+            sweep_results["x"].append(v)
+            sweep_results["Tensile"].append(t)
+            sweep_results["Hardness"].append(h)
+            sweep_results["Fatigue"].append(f)
+
+        unit = "°C" if is_temp else "wt%"
+
+        # ── Line chart ─────────────────────────────────────────────────
+        fig_sens = make_subplots(rows=1, cols=3,
+                                 subplot_titles=["Tensile Strength (MPa)",
+                                                 "Hardness (HB)",
+                                                 "Fatigue Strength (MPa)"])
+
+        for col_i, (prop, colour) in enumerate([
+            ("Tensile", "#4c72b0"), ("Hardness", "#dd8452"), ("Fatigue", "#55a868")
+        ], 1):
+            fig_sens.add_trace(go.Scatter(
+                x=sweep_results["x"], y=sweep_results[prop],
+                mode="lines", line=dict(color=colour, width=3),
+                name=prop
+            ), row=1, col=col_i)
+            # Mark baseline
+            base_val = {"Tensile": base_t, "Hardness": base_h, "Fatigue": base_f}[prop]
+            fig_sens.add_trace(go.Scatter(
+                x=[feat_val], y=[base_val], mode="markers",
+                marker=dict(size=12, color="white", line=dict(color=colour, width=3)),
+                name=f"Current ({feat_val})", showlegend=(col_i == 1),
+            ), row=1, col=col_i)
+
+        fig_sens.update_layout(**_PLOTLY_BASE)
+        fig_sens.update_layout(
+            height=380,
+            title=dict(text=f"Effect of {sens_feature} on Mechanical Properties",
+                       font=dict(size=14, color="white", family="Rajdhani, sans-serif")),
+            showlegend=True,
+            legend=dict(bgcolor="rgba(8,13,30,0.7)", bordercolor="rgba(76,114,176,0.3)",
+                        borderwidth=1, font=dict(size=10)),
+        )
+        fig_sens.update_xaxes(title_text=f"{sens_feature} ({unit})")
+        st.plotly_chart(fig_sens, use_container_width=True)
+
+        # ── Tornado chart: all features at ±10% ────────────────────────
+        st.markdown(html_section_header("Impact Ranking",
+                    "Change in Tensile Strength when each feature varies ±10% from current value", "🌪️"),
+                    unsafe_allow_html=True)
+
+        tornado_data = []
+        for feat in BASE_FEATURES:
+            test_lo = base_inp.copy()
+            test_hi = base_inp.copy()
+            val = base_inp[feat]
+            if feat in ("NT", "QT", "TT"):
+                delta = 20
+            else:
+                delta = max(val * 0.10, 0.005)
+            test_lo[feat] = val - delta
+            test_hi[feat] = val + delta
+            t_lo, _, _ = predict_properties(test_lo)
+            t_hi, _, _ = predict_properties(test_hi)
+            tornado_data.append((feat, t_lo - base_t, t_hi - base_t))
+
+        tornado_data.sort(key=lambda x: abs(x[2] - x[1]))
+
+        fig_tornado = go.Figure()
+        for feat, lo, hi in tornado_data:
+            fig_tornado.add_trace(go.Bar(
+                y=[feat], x=[hi - lo], orientation="h",
+                marker_color="#4c72b0" if hi > lo else "#dd8452",
+                name=feat, showlegend=False,
+                hovertemplate=f"{feat}<br>Low: {lo:+.1f} MPa<br>High: {hi:+.1f} MPa<extra></extra>",
+            ))
+
+        fig_tornado.update_layout(**_PLOTLY_BASE)
+        fig_tornado.update_layout(
+            height=350, xaxis_title="Δ Tensile Strength (MPa)",
+            title=dict(text="Feature Impact — Tornado Chart",
+                       font=dict(size=14, color="white", family="Rajdhani, sans-serif")),
+        )
+        st.plotly_chart(fig_tornado, use_container_width=True)
+
+
+# ────────────────────────────────────────────────────────────────────────────
+#  TAB 5  ─  BATCH PREDICTIONS
+# ────────────────────────────────────────────────────────────────────────────
+with tab_batch:
+    st.markdown(html_section_header("Batch Predictions",
+                "Upload a CSV file to predict properties for multiple steel compositions", "📁"),
+                unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style="
+        background:rgba(13,25,50,0.55);border:1px solid rgba(76,114,176,0.25);
+        border-radius:12px;padding:16px 20px;margin-bottom:16px;
+    ">
+      <div style="color:#c8d8ff;font-size:0.88rem;font-weight:600;margin-bottom:8px;">
+        📋 Required CSV columns
+      </div>
+      <div style="color:rgba(180,200,255,0.55);font-size:0.82rem;font-family:'JetBrains Mono',monospace;">
+        C, Si, Mn, P, S, Ni, Cr, Cu, Mo, NT, TT, QT
+      </div>
+      <div style="color:rgba(180,200,255,0.35);font-size:0.75rem;margin-top:6px;">
+        Each row = one steel composition. Temperature columns in °C, elements in wt%.
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    uploaded = st.file_uploader("Upload CSV", type=["csv"], label_visibility="collapsed")
+
+    if uploaded is not None:
+        try:
+            batch_df = pd.read_csv(uploaded)
+            missing = [c for c in BASE_FEATURES if c not in batch_df.columns]
+            if missing:
+                st.error(f"❌ Missing columns: {', '.join(missing)}")
+            else:
+                st.success(f"✅ Loaded {len(batch_df)} rows")
+
+                # Predict
+                batch_results = []
+                progress = st.progress(0, text="Predicting…")
+                for idx, row in batch_df.iterrows():
+                    inp = {f: float(row[f]) for f in BASE_FEATURES}
+                    t, h, f_ = predict_properties(inp)
+                    batch_results.append({"Row": idx+1, **inp,
+                                          "Tensile (MPa)": round(t, 1),
+                                          "Hardness (HB)": round(h, 1),
+                                          "Fatigue (MPa)": round(f_, 1)})
+                    progress.progress((idx+1) / len(batch_df))
+                progress.empty()
+
+                results_df = pd.DataFrame(batch_results)
+
+                # Summary stats
+                sc1, sc2, sc3 = st.columns(3)
+                with sc1:
+                    st.markdown(html_metric_card(
+                        "Avg Tensile", f"{results_df['Tensile (MPa)'].mean():.0f}",
+                        "MPa", "#4c72b0", "💪"), unsafe_allow_html=True)
+                with sc2:
+                    st.markdown(html_metric_card(
+                        "Avg Hardness", f"{results_df['Hardness (HB)'].mean():.0f}",
+                        "HB", "#dd8452", "🪨"), unsafe_allow_html=True)
+                with sc3:
+                    st.markdown(html_metric_card(
+                        "Avg Fatigue", f"{results_df['Fatigue (MPa)'].mean():.0f}",
+                        "MPa", "#55a868", "🔄"), unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # Results table
+                st.dataframe(results_df, use_container_width=True, hide_index=True)
+
+                # Distribution plots
+                fig_batch = make_subplots(rows=1, cols=3,
+                    subplot_titles=["Tensile (MPa)", "Hardness (HB)", "Fatigue (MPa)"])
+                for col_i, (col, colour) in enumerate([
+                    ("Tensile (MPa)", "#4c72b0"),
+                    ("Hardness (HB)", "#dd8452"),
+                    ("Fatigue (MPa)", "#55a868"),
+                ], 1):
+                    fig_batch.add_trace(go.Histogram(
+                        x=results_df[col], marker_color=colour,
+                        opacity=0.8, name=col
+                    ), row=1, col=col_i)
+                fig_batch.update_layout(**_PLOTLY_BASE)
+                fig_batch.update_layout(height=300, showlegend=False,
+                    title=dict(text="Batch Prediction Distributions",
+                               font=dict(size=14, color="white", family="Rajdhani")))
+                st.plotly_chart(fig_batch, use_container_width=True)
+
+                # Download
+                csv_out = results_df.to_csv(index=False)
+                st.download_button("⬇️  Download Results CSV", csv_out,
+                                   "steelsight_batch_results.csv", "text/csv",
+                                   use_container_width=True)
+        except Exception as e:
+            st.error(f"❌ Error processing file: {e}")
+
+    else:
+        # Download template
+        template = pd.DataFrame([{f: "" for f in BASE_FEATURES}])
+        st.download_button("📥  Download CSV Template", template.to_csv(index=False),
+                           "steelsight_template.csv", "text/csv")
+
+
+# ────────────────────────────────────────────────────────────────────────────
+#  TAB 6  ─  DATASET EXPLORER
+# ────────────────────────────────────────────────────────────────────────────
+with tab_data:
+    st.markdown(html_section_header("NIMS Dataset Explorer",
+                "Browse the training dataset and find similar steel compositions", "🗃️"),
+                unsafe_allow_html=True)
+
+    @st.cache_data
+    def load_dataset():
+        csv_path = os.path.join(os.path.dirname(__file__), "NIMS_Fatigue.csv")
+        if not os.path.exists(csv_path):
+            csv_path = "NIMS_Fatigue.csv"
+        return pd.read_csv(csv_path)
+
+    try:
+        dataset = load_dataset()
+
+        dc1, dc2 = st.columns([1, 1])
+        with dc1:
+            x_feat = st.selectbox("X-axis", BASE_FEATURES + TARGETS, index=0, key="dx")
+        with dc2:
+            y_feat = st.selectbox("Y-axis", BASE_FEATURES + TARGETS, index=len(BASE_FEATURES), key="dy")
+
+        fig_data = go.Figure()
+        fig_data.add_trace(go.Scatter(
+            x=dataset[x_feat], y=dataset[y_feat],
+            mode="markers",
+            marker=dict(size=7, color=dataset.get("Tensile", dataset[y_feat]),
+                        colorscale="Viridis", showscale=True,
+                        colorbar=dict(title="Tensile")),
+            text=[f"Row {i}" for i in range(len(dataset))],
+            hovertemplate=f"{x_feat}: %{{x}}<br>{y_feat}: %{{y}}<extra></extra>",
+        ))
+
+        # Mark current input if prediction exists
+        if result is not None and x_feat in BASE_FEATURES and y_feat in TARGETS:
+            curr = {"C": C, "Si": Si, "Mn": Mn, "P": P, "S": S,
+                    "Ni": Ni, "Cr": Cr, "Cu": Cu, "Mo": Mo,
+                    "NT": NT, "QT": QT, "TT": TT,
+                    "Tensile": result[0], "Hardness": result[1], "Fatigue": result[2]}
+            if x_feat in curr and y_feat in curr:
+                fig_data.add_trace(go.Scatter(
+                    x=[curr[x_feat]], y=[curr[y_feat]],
+                    mode="markers+text", text=["  Your Steel"],
+                    textposition="top right",
+                    textfont=dict(size=12, color="white"),
+                    marker=dict(size=16, color="red", symbol="star",
+                                line=dict(color="white", width=2)),
+                    name="Your prediction",
+                ))
+
+        fig_data.update_layout(**_PLOTLY_BASE)
+        fig_data.update_layout(
+            xaxis_title=x_feat, yaxis_title=y_feat,
+            height=450,
+            title=dict(text=f"{x_feat} vs {y_feat} — NIMS Fatigue Database ({len(dataset)} samples)",
+                       font=dict(size=14, color="white", family="Rajdhani")),
+        )
+        st.plotly_chart(fig_data, use_container_width=True)
+
+        # ── Dataset stats ──────────────────────────────────────────────
+        with st.expander("📊 Dataset Statistics"):
+            st.dataframe(dataset[BASE_FEATURES + TARGETS].describe().round(3),
+                         use_container_width=True)
+
+        # ── Nearest neighbour ──────────────────────────────────────────
+        if result is not None:
+            st.markdown(html_section_header("Nearest Neighbours",
+                        "Training samples most similar to your input", "🔍"),
+                        unsafe_allow_html=True)
+
+            curr_vals = np.array([C, Si, Mn, P, S, Ni, Cr, Cu, Mo, NT, TT, QT])
+            ds_vals   = dataset[BASE_FEATURES].values
+            # Normalise for distance
+            std = ds_vals.std(axis=0)
+            std[std == 0] = 1
+            dists = np.sqrt(((ds_vals - curr_vals) / std) ** 2).sum(axis=1)
+            top_idx = dists.argsort()[:5]
+
+            nn_df = dataset.iloc[top_idx][BASE_FEATURES + TARGETS].copy()
+            nn_df.insert(0, "Distance", [f"{dists[i]:.2f}" for i in top_idx])
+            st.dataframe(nn_df, use_container_width=True, hide_index=True)
+
+        # ── Full table ─────────────────────────────────────────────────
+        with st.expander("📋 Full Dataset"):
+            st.dataframe(dataset, use_container_width=True, hide_index=True)
+
+    except FileNotFoundError:
+        st.warning("⚠️ NIMS_Fatigue.csv not found. Place it in the project directory.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  FOOTER
+# ══════════════════════════════════════════════════════════════════════════════
+_model_badge = f"v2 per-target" if MODEL_MODE == "v2" else "v1 multi-output"
+st.markdown(f"""
+<div style="
+    text-align:center;padding:20px 0 10px;margin-top:40px;
+    border-top:1px solid rgba(76,114,176,0.15);
+">
+  <div style="font-size:0.72rem;color:rgba(180,200,255,0.30);letter-spacing:0.1em;">
+    SteelSight · Model: XGBoost {_model_badge} · Dataset: NIMS Fatigue ({len(load_dataset()) if 'load_dataset' in dir() else 362} samples)
+    · Built with Streamlit + Plotly
+  </div>
+</div>
+""", unsafe_allow_html=True)

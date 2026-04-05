@@ -1,0 +1,136 @@
+{
+  "model_version": "v2",
+  "features": [
+    "C",
+    "Si",
+    "Mn",
+    "P",
+    "S",
+    "Ni",
+    "Cr",
+    "Cu",
+    "Mo",
+    "NT",
+    "TT",
+    "QT",
+    "CE",
+    "DeltaT",
+    "C_x_Cr"
+  ],
+  "targets": [
+    "Tensile",
+    "Hardness",
+    "Fatigue"
+  ],
+  "n_samples": 361,
+  "n_train": 288,
+  "n_test": 73,
+  "training_ranges": {
+    "C": {
+      "min": 0.28,
+      "max": 0.57
+    },
+    "Si": {
+      "min": 0.16,
+      "max": 0.968
+    },
+    "Mn": {
+      "min": 0.37,
+      "max": 1.6
+    },
+    "P": {
+      "min": 0.007,
+      "max": 0.031
+    },
+    "S": {
+      "min": 0.003,
+      "max": 0.129
+    },
+    "Ni": {
+      "min": 0.01,
+      "max": 2.78
+    },
+    "Cr": {
+      "min": 0.01,
+      "max": 1.12
+    },
+    "Cu": {
+      "min": 0.01,
+      "max": 0.22
+    },
+    "Mo": {
+      "min": 0.0,
+      "max": 0.24
+    },
+    "NT": {
+      "min": 825.0,
+      "max": 900.0
+    },
+    "TT": {
+      "min": 550.0,
+      "max": 680.0
+    },
+    "QT": {
+      "min": 825.0,
+      "max": 865.0
+    }
+  },
+  "metrics": [
+    {
+      "Target": "Tensile",
+      "R\u00b2": 0.9855,
+      "MAE": 12.16,
+      "RMSE": 16.49,
+      "MAPE (%)": 1.35
+    },
+    {
+      "Target": "Hardness",
+      "R\u00b2": 0.9826,
+      "MAE": 4.03,
+      "RMSE": 5.44,
+      "MAPE (%)": 1.4
+    },
+    {
+      "Target": "Fatigue",
+      "R\u00b2": 0.9526,
+      "MAE": 11.05,
+      "RMSE": 15.84,
+      "MAPE (%)": 2.19
+    }
+  ],
+  "best_params": {
+    "Tensile": {
+      "n_estimators": 475,
+      "max_depth": 3,
+      "learning_rate": 0.13327037952236048,
+      "subsample": 0.6591742054227034,
+      "colsample_bytree": 0.854745762215837,
+      "min_child_weight": 5,
+      "gamma": 0.37735886774722965,
+      "reg_alpha": 6.553457230838097,
+      "reg_lambda": 4.005724864952357e-07
+    },
+    "Hardness": {
+      "n_estimators": 486,
+      "max_depth": 8,
+      "learning_rate": 0.05191356426324163,
+      "subsample": 0.6244818551340945,
+      "colsample_bytree": 0.6375095967586696,
+      "min_child_weight": 9,
+      "gamma": 0.6156692469962737,
+      "reg_alpha": 1.7706421983760825e-08,
+      "reg_lambda": 6.372550326830757e-08
+    },
+    "Fatigue": {
+      "n_estimators": 373,
+      "max_depth": 3,
+      "learning_rate": 0.0893310274912353,
+      "subsample": 0.9881099676485742,
+      "colsample_bytree": 0.6482325396272873,
+      "min_child_weight": 5,
+      "gamma": 4.932825292905555,
+      "reg_alpha": 0.0028665969451856523,
+      "reg_lambda": 2.538698659281014e-05
+    }
+  }
+}
