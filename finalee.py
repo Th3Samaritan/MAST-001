@@ -253,18 +253,22 @@ def load_models():
     models_dir = "models"
     metadata   = None
 
-    meta_path = os.path.join(models_dir, "model_metrics.json")
-    if os.path.exists(meta_path):
-        with open(meta_path) as f:
-            metadata = json_lib.load(f)
+    # Check root first (newer models), then models/ subdirectory
+    for meta_path in ["model_metrics.json", os.path.join(models_dir, "model_metrics.json")]:
+        if os.path.exists(meta_path):
+            with open(meta_path) as f:
+                metadata = json_lib.load(f)
+            break
 
-    # Per-target JSON models (preferred)
+    # Per-target JSON models (preferred) — check root first, then models/
     per_target = {}
     for tgt in TARGETS:
-        p = os.path.join(models_dir, f"xgb_{tgt.lower()}.json")
-        if os.path.exists(p):
-            m = XGBRegressor(); m.load_model(p)
-            per_target[tgt] = m
+        for p in [f"xgb_{tgt.lower()}.json",
+                  os.path.join(models_dir, f"xgb_{tgt.lower()}.json")]:
+            if os.path.exists(p):
+                m = XGBRegressor(); m.load_model(p)
+                per_target[tgt] = m
+                break
 
     if len(per_target) == len(TARGETS):
         return {"mode": "per_target", "models": per_target, "metadata": metadata}
