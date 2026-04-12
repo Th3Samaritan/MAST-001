@@ -1,0 +1,192 @@
+{
+  "features": [
+    "C",
+    "Si",
+    "Mn",
+    "P",
+    "S",
+    "Ni",
+    "Cr",
+    "Cu",
+    "Mo",
+    "Carbon_Equiv",
+    "A3_Temp_C",
+    "Delta_HT_A3",
+    "Hollomon_Jaffe",
+    "C_x_Cr",
+    "HT_Temp_C",
+    "Soaking_Time_min",
+    "Tempering_Temp_C",
+    "Tempering_Time_min",
+    "Process_Quench_Temper",
+    "Process_Normalizing",
+    "Process_Annealing",
+    "Process_Stress_Relief",
+    "Cooling_Medium_Water",
+    "Cooling_Medium_Oil",
+    "Cooling_Medium_Polymer",
+    "Cooling_Medium_Air",
+    "Cooling_Medium_Furnace",
+    "Cooling_Medium_Salt Bath"
+  ],
+  "targets": [
+    "Tensile_MPa",
+    "Yield_MPa",
+    "Hardness_HB",
+    "Elongation_pct",
+    "Fatigue_MPa"
+  ],
+  "training_ranges": {
+    "C": {
+      "min": 0.0802,
+      "max": 0.5994
+    },
+    "Si": {
+      "min": 0.1007,
+      "max": 0.7994
+    },
+    "Mn": {
+      "min": 0.3059,
+      "max": 1.7981
+    },
+    "P": {
+      "min": 0.0051,
+      "max": 0.0349
+    },
+    "S": {
+      "min": 0.003,
+      "max": 0.03
+    },
+    "Ni": {
+      "min": 0.0015,
+      "max": 3.4883
+    },
+    "Cr": {
+      "min": 0.0034,
+      "max": 1.7973
+    },
+    "Cu": {
+      "min": 0.0043,
+      "max": 0.4994
+    },
+    "Mo": {
+      "min": 0.0006,
+      "max": 0.5999
+    },
+    "Carbon_Equiv": {
+      "min": 0.4053791666666667,
+      "max": 1.3596775
+    },
+    "A3_Temp_C": {
+      "min": 680.9048523602647,
+      "max": 864.6476828304644
+    },
+    "Delta_HT_A3": {
+      "min": -671.9728461982983,
+      "max": 99.73814403586687
+    },
+    "Hollomon_Jaffe": {
+      "min": 0.0,
+      "max": 17676.74387378848
+    },
+    "C_x_Cr": {
+      "min": 0.0011560000000000001,
+      "max": 1.0678910400000001
+    },
+    "HT_Temp_C": {
+      "min": 154.5,
+      "max": 932.3
+    },
+    "Soaking_Time_min": {
+      "min": 15.2,
+      "max": 298.3
+    },
+    "Tempering_Temp_C": {
+      "min": 0.0,
+      "max": 679.7
+    },
+    "Tempering_Time_min": {
+      "min": 0.0,
+      "max": 238.2
+    },
+    "Process_Quench_Temper": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Process_Normalizing": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Process_Annealing": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Process_Stress_Relief": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Cooling_Medium_Water": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Cooling_Medium_Oil": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Cooling_Medium_Polymer": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Cooling_Medium_Air": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Cooling_Medium_Furnace": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Cooling_Medium_Salt Bath": {
+      "min": 0.0,
+      "max": 1.0
+    }
+  },
+  "model_metrics": [
+    {
+      "Target": "Tensile_MPa",
+      "R\u00b2": 0.9879,
+      "MAE": 34.86,
+      "RMSE": 51.25,
+      "MAPE (%)": 4.27
+    },
+    {
+      "Target": "Yield_MPa",
+      "R\u00b2": 0.9775,
+      "MAE": 44.32,
+      "RMSE": 64.43,
+      "MAPE (%)": 7.34
+    },
+    {
+      "Target": "Hardness_HB",
+      "R\u00b2": 0.986,
+      "MAE": 11.68,
+      "RMSE": 17.03,
+      "MAPE (%)": 4.58
+    },
+    {
+      "Target": "Elongation_pct",
+      "R\u00b2": 0.9748,
+      "MAE": 1.02,
+      "RMSE": 1.38,
+      "MAPE (%)": 3.74
+    },
+    {
+      "Target": "Fatigue_MPa",
+      "R\u00b2": 0.9692,
+      "MAE": 27.31,
+      "RMSE": 37.65,
+      "MAPE (%)": 7.46
+    }
+  ],
+  "n_train": 456,
+  "n_test": 114
+}
