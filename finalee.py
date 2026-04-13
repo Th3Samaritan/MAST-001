@@ -398,8 +398,7 @@ def build_gauges(preds):
                                thickness=0.75, value=val),
             ),
         ), row=1, col=i)
-    fig.update_layout(**_BASE, height=250,
-                      margin=dict(l=20, r=20, t=40, b=10))
+    fig.update_layout(**{**_BASE, "margin": dict(l=20, r=20, t=40, b=10)}, height=250)
     return fig
 
 
