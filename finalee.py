@@ -1152,7 +1152,20 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════════════════════
 #  MAIN CONTENT
 # ══════════════════════════════════════════════════════════════════════════════
-if not predict_btn:
+# ── Session-state persistence ────────────────────────────────────────────────
+# Buttons return True only on the single rerun immediately after a click.
+# We use session_state so results and the simulation survive any subsequent
+# button press (e.g. "Run Simulation") without returning to the welcome screen.
+if 'show_results' not in st.session_state:
+    st.session_state.show_results = False
+
+if predict_btn:
+    st.session_state.show_results = True
+    # Clear any previous simulation so the new inputs start fresh
+    st.session_state.pop('sim_ready',  None)
+    st.session_state.pop('sim_params', None)
+
+if not st.session_state.show_results:
     # ── Welcome screen ───────────────────────────────────────────────────
     col_a, col_b, col_c, col_d = st.columns(4)
     for col, proc, key, color, icon, desc in [
@@ -1206,8 +1219,9 @@ if not predict_btn:
         </div></div>""", unsafe_allow_html=True)
 
 else:
-    # ── Run prediction ───────────────────────────────────────────────────
-    feat = build_feature_vector(
+    # ── Compute prediction from current sidebar values ────────────────────
+    # Sidebar inputs are always defined on every rerun, so this is safe.
+    feat  = build_feature_vector(
         process_key, C, Si, Mn, P, S, Ni, Cr, Cu, Mo,
         float(ht_temp), float(soak_time), cool_medium,
         float(t_temp), float(t_time)
@@ -1346,12 +1360,20 @@ else:
         ), unsafe_allow_html=True)
 
         run_sim = st.button("▶  Run Simulation", type="primary")
+
+        # Persist the simulation trigger and its input snapshot in session_state
+        # so the GIF stays visible across any subsequent Streamlit reruns.
         if run_sim:
+            st.session_state.sim_ready  = True
+            st.session_state.sim_params = (
+                process_key, float(C), float(ht_temp), float(soak_time),
+                cool_medium, float(t_temp), float(t_time),
+            )
+
+        if st.session_state.get('sim_ready'):
+            sim_p = st.session_state.sim_params
             with st.spinner("Simulating microstructure evolution… (this may take ~20 s)"):
-                gif_bytes = build_simulation_gif(
-                    process_key, float(C), float(ht_temp), float(soak_time),
-                    cool_medium, float(t_temp), float(t_time),
-                )
+                gif_bytes = build_simulation_gif(*sim_p)
 
             st.markdown("""
             <div style="background:rgba(13,25,50,0.7);border:1px solid rgba(76,114,176,0.25);
@@ -1373,25 +1395,24 @@ else:
             st.download_button(
                 label="⬇  Download simulation GIF",
                 data=gif_bytes,
-                file_name=f"steelsight_sim_{process_key}_{int(ht_temp)}C.gif",
+                file_name=f"steelsight_sim_{sim_p[0]}_{int(sim_p[2])}C.gif",
                 mime="image/gif",
             )
 
-            # Physics summary
-            from io import BytesIO as _BytesIO
-            Ms_val = max(150.0, 539 - 423*C - 30.4*0.85 - 12.1*1.05 - 7.5*0.2)
-            K_gg   = 0.9 * np.exp(-20000 / (float(ht_temp) + 273.15)) * (float(soak_time) / 60.0)
-            n_ini  = 100
-            n_soak = max(16, int(n_ini / (1.0 + 7.0 * K_gg)))
-            grain_growth_pct = round((1 - n_soak / n_ini) * 100, 1)
+            # Physics summary (derived from the snapshot params, not live inputs)
+            _proc, _C, _ht, _soak, _cool, _tt, _ttime = sim_p
+            Ms_val = max(150.0, 539 - 423*_C - 30.4*0.85 - 12.1*1.05 - 7.5*0.2)
+            K_gg   = 0.9 * np.exp(-20000 / (_ht + 273.15)) * (_soak / 60.0)
+            n_soak = max(16, int(100 / (1.0 + 7.0 * K_gg)))
+            grain_growth_pct = round((1 - n_soak / 100) * 100, 1)
 
             with st.expander("📐 Simulation physics", expanded=False):
                 phys_rows = [
-                    ("Martensite start (Ms)",       f"{Ms_val:.0f}",  "°C"),
-                    ("Grain growth factor",          f"{K_gg:.4f}",    "—"),
-                    ("Approx. grain coarsening",     f"{grain_growth_pct}",  "%"),
-                    ("JMAK exponent (recryst.)",     "2.0 / 1.8",     "Q&T / Ann."),
-                    ("Cooling speed class",          cool_medium,      "—"),
+                    ("Martensite start (Ms)",    f"{Ms_val:.0f}",       "°C"),
+                    ("Grain growth factor",       f"{K_gg:.4f}",         "—"),
+                    ("Approx. grain coarsening",  f"{grain_growth_pct}", "%"),
+                    ("JMAK exponent (recryst.)",  "2.0 / 1.8",           "Q&T / Ann."),
+                    ("Cooling speed class",        _cool,                 "—"),
                 ]
                 st.dataframe(
                     pd.DataFrame(phys_rows, columns=["Parameter","Value","Unit"]).set_index("Parameter"),
