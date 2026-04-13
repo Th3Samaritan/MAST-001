@@ -673,6 +673,326 @@ def build_tt_profile(process_key, ht_temp, t_temp, soak_time, t_time):
     return fig
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  MICROSTRUCTURE SIMULATION
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _compute_voronoi_grains(n_grains, seed=42):
+    """Bounded Voronoi tessellation clipped to [0,1]²."""
+    from scipy.spatial import Voronoi
+    rng  = np.random.default_rng(seed)
+    pts  = rng.random((n_grains, 2))
+    offs = np.array([[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]])
+    all_pts = np.vstack([pts] + [pts + o for o in offs])
+    vor  = Voronoi(all_pts)
+    polys = []
+    for i in range(n_grains):
+        reg = vor.regions[vor.point_region[i]]
+        if -1 in reg or len(reg) < 3:
+            polys.append(None)
+        else:
+            polys.append(np.clip(vor.vertices[reg], 0.0, 1.0))
+    return pts, polys
+
+
+@st.cache_data(show_spinner=False)
+def build_simulation_gif(process_key, C, ht_temp, soak_time, cool_medium,
+                          t_temp, t_time):
+    """
+    Render a 36-frame animated GIF showing microstructure evolution.
+    Returns raw GIF bytes.
+    """
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Polygon as MplPoly
+    from PIL import Image
+    from io import BytesIO
+
+    # ── Physical constants ───────────────────────────────────────────────────
+    A1   = 723.0
+    Ms   = max(150.0, 539 - 423*C - 30.4*0.85 - 12.1*1.05 - 7.5*0.2)
+    COOL = {"Water":3.0,"Polymer":2.2,"Oil":1.8,"Salt Bath":1.1,"Air":0.4,"Furnace":0.08}
+    spd  = COOL.get(cool_medium, 1.0)
+
+    # Grain-growth model: fewer grains = coarser austenite after soaking
+    K_gg   = 0.9 * np.exp(-20000 / (ht_temp + 273.15)) * (soak_time / 60.0)
+    n_ini  = 100
+    n_soak = max(16, int(n_ini / (1.0 + 7.0 * K_gg)))
+
+    # ── Phase colour palette (linear RGB 0-1) ────────────────────────────────
+    PC = {
+        "ferrite":             np.array([0.31, 0.78, 0.47]),
+        "pearlite":            np.array([0.52, 0.35, 0.20]),
+        "austenite":           np.array([1.00, 0.84, 0.00]),
+        "martensite":          np.array([0.10, 0.14, 0.55]),
+        "tempered_martensite": np.array([0.25, 0.42, 0.90]),
+        "bainite":             np.array([0.42, 0.22, 0.65]),
+        "fine_pearlite":       np.array([0.58, 0.38, 0.18]),
+        "coarse_pearlite":     np.array([0.72, 0.52, 0.28]),
+    }
+
+    # ── Pre-compute grain structures (done once) ─────────────────────────────
+    seed0 = (int(abs(C * 100)) + int(ht_temp)) % 9973
+    GS = {
+        "initial": _compute_voronoi_grains(n_ini,          seed=seed0),
+        "soaked":  _compute_voronoi_grains(n_soak,         seed=seed0 + 1),
+        "recryst": _compute_voronoi_grains(n_soak + 28,    seed=seed0 + 2),
+    }
+    # Stable per-grain orientation offsets (EBSD-like brightness variation)
+    rng0 = np.random.default_rng(seed0)
+    ORI  = {k: rng0.random(len(v[1])) for k, v in GS.items()}
+
+    # ── T-t profile ──────────────────────────────────────────────────────────
+    def T_at(f):
+        if process_key == "Quench_Temper":
+            if f < 0.18: return 25 + (ht_temp - 25) * f / 0.18
+            if f < 0.38: return float(ht_temp)
+            if f < 0.52: return ht_temp - (ht_temp - 50) * (f - 0.38) / 0.14
+            if f < 0.65: return 50 + (t_temp - 50) * (f - 0.52) / 0.13
+            if f < 0.88: return float(t_temp)
+            return t_temp - (t_temp - 25) * (f - 0.88) / 0.12
+        elif process_key == "Normalizing":
+            if f < 0.22: return 25 + (ht_temp - 25) * f / 0.22
+            if f < 0.42: return float(ht_temp)
+            return ht_temp - (ht_temp - 25) * (f - 0.42) / 0.58
+        elif process_key == "Annealing":
+            if f < 0.20: return 25 + (ht_temp - 25) * f / 0.20
+            if f < 0.45: return float(ht_temp)
+            return ht_temp - (ht_temp - 25) * (f - 0.45) / 0.55
+        else:
+            if f < 0.22: return 25 + (ht_temp - 25) * f / 0.22
+            if f < 0.68: return float(ht_temp)
+            return ht_temp - (ht_temp - 25) * (f - 0.68) / 0.32
+
+    def sname(f):
+        if process_key == "Quench_Temper":
+            if f < 0.18: return "Heating"
+            if f < 0.38: return "Austenitizing"
+            if f < 0.52: return "Quenching"
+            if f < 0.65: return "Re-heating"
+            if f < 0.88: return "Tempering"
+            return "Air Cooling"
+        elif process_key == "Normalizing":
+            if f < 0.22: return "Heating"
+            if f < 0.42: return "Austenitizing"
+            return "Air Cooling — Recrystallization"
+        elif process_key == "Annealing":
+            if f < 0.20: return "Heating"
+            if f < 0.45: return "Austenitizing"
+            return "Furnace Cooling — Recrystallization"
+        else:
+            if f < 0.22: return "Heating"
+            if f < 0.68: return "Soaking (Sub-A₁)"
+            return "Air Cooling"
+
+    # ── Per-frame grain / phase state ─────────────────────────────────────��──
+    def frame_state(f):
+        """Return (gs_key, [(phase,frac),...], seed_off, mart_needle_frac)."""
+        T   = T_at(f)
+        needles = 0.0
+        if process_key == "Quench_Temper":
+            if f < 0.18:
+                af = max(0.0, min(1.0, (T - A1) / max(1, ht_temp - A1))) * (f / 0.18)
+                return "initial", [("austenite",af),("ferrite",max(0,0.55-af*0.5)),("pearlite",max(0,0.45-af*0.5))], 10, 0.0
+            if f < 0.38:
+                prog = (f - 0.18) / 0.20
+                gs   = "soaked" if prog > 0.5 else "initial"
+                return gs, [("austenite", 1.0)], 20, 0.0
+            if f < 0.52:
+                prog = (f - 0.38) / 0.14
+                mf   = max(0.0, min(1.0, (Ms + 60 - T) / (Ms + 60 - 30))) if spd >= 1.0 else max(0.0, min(0.4, prog * 0.4))
+                return "soaked", [("martensite", mf), ("austenite", 1 - mf)], 30, mf
+            if f < 0.65:
+                return "soaked", [("martensite", 1.0)], 35, 0.8
+            if f < 0.88:
+                tf = min(1.0, (f - 0.65) / 0.23)
+                tm = "tempered_martensite"
+                return "soaked", [(tm, tf), ("martensite", 1 - tf)], 40, max(0, 0.5 - tf * 0.5)
+            return "soaked", [("tempered_martensite", 1.0)], 45, 0.0
+
+        elif process_key == "Normalizing":
+            if f < 0.22:
+                af = max(0.0, min(1.0, (T - A1) / max(1, ht_temp - A1))) * (f / 0.22)
+                return "initial", [("austenite",af),("ferrite",max(0,0.55*(1-af))),("pearlite",max(0,0.45*(1-af)))], 10, 0.0
+            if f < 0.42:
+                prog = (f - 0.22) / 0.20
+                gs   = "soaked" if prog > 0.5 else "initial"
+                return gs, [("austenite", 1.0)], 20, 0.0
+            prog  = min(1.0, (f - 0.42) / 0.58)
+            X_rx  = 1 - np.exp(-2.0 * prog**2.0)   # JMAK recrystallization
+            gs    = "recryst" if X_rx > 0.45 else "soaked"
+            fp    = min(0.65, prog * 0.65)
+            fe    = min(0.35, prog * 0.35)
+            return gs, [("fine_pearlite", fp), ("ferrite", fe), ("austenite", max(0, 1 - fp - fe))], 50, 0.0
+
+        elif process_key == "Annealing":
+            if f < 0.20:
+                af = max(0.0, min(1.0, (T - A1) / max(1, ht_temp - A1))) * (f / 0.20)
+                return "initial", [("austenite",af),("ferrite",max(0,0.55*(1-af))),("pearlite",max(0,0.45*(1-af)))], 10, 0.0
+            if f < 0.45:
+                prog = (f - 0.20) / 0.25
+                gs   = "soaked" if prog > 0.5 else "initial"
+                return gs, [("austenite", 1.0)], 20, 0.0
+            prog  = min(1.0, (f - 0.45) / 0.55)
+            X_rx  = 1 - np.exp(-1.5 * prog**1.8)
+            gs    = "recryst" if X_rx > 0.40 else "soaked"
+            cp    = min(0.68, prog * 0.68)
+            fe    = min(0.30, prog * 0.30)
+            return gs, [("coarse_pearlite", cp), ("ferrite", fe), ("austenite", max(0, 1 - cp - fe))], 60, 0.0
+
+        else:  # Stress_Relief
+            return "initial", [("ferrite", 0.55), ("pearlite", 0.45)], 70, 0.0
+
+    def make_colors(gs_key, phase_fracs, seed_off):
+        _, polys = GS[gs_key]
+        oris     = ORI[gs_key]
+        n        = len(polys)
+        rng_l    = np.random.default_rng(seed0 + seed_off)
+        cum      = np.cumsum([pf for _, pf in phase_fracs])
+        cum      = cum / max(cum[-1], 1e-9)
+        colors   = []
+        for i in range(n):
+            r   = rng_l.random()
+            lbl = phase_fracs[min(np.searchsorted(cum, r), len(phase_fracs)-1)][0]
+            b   = 0.68 + 0.32 * oris[i]
+            colors.append(np.clip(PC.get(lbl, PC["ferrite"]) * b, 0, 1))
+        return colors
+
+    # ── Matplotlib layout ────────────────────────────────────────────────────
+    BG      = '#06090f'
+    AX_BG   = '#080d1e'
+    PROC_RGB = {
+        "Quench_Temper": (0.30, 0.45, 0.69),
+        "Normalizing":   (0.33, 0.72, 0.41),
+        "Annealing":     (0.87, 0.52, 0.32),
+        "Stress_Relief": (0.77, 0.31, 0.32),
+    }.get(process_key, (0.30, 0.45, 0.69))
+
+    LEGEND = {
+        "martensite":          "Martensite (α') — high hardness, low toughness",
+        "tempered_martensite": "Tempered Martensite — strength + toughness",
+        "austenite":           "Austenite (γ) — FCC, high temperature phase",
+        "fine_pearlite":       "Fine Pearlite + Ferrite — normalized microstructure",
+        "coarse_pearlite":     "Coarse Pearlite + Ferrite — annealed, soft",
+        "ferrite":             "Ferrite (α) + Pearlite — initial microstructure",
+        "bainite":             "Bainite — intermediate strength & toughness",
+        "coarse_pearlite":     "Coarse Pearlite + Ferrite — annealed microstructure",
+    }
+
+    N_FRAMES    = 36
+    fracs       = np.linspace(0, 1, N_FRAMES)
+    tf_all      = np.linspace(0, 1, 200)
+    T_all       = [T_at(f) for f in tf_all]
+    T_max_plot  = max(ht_temp * 1.18, 400.0)
+
+    fig = plt.figure(figsize=(10, 4.5), facecolor=BG)
+    pil_frames = []
+
+    for fi, f in enumerate(fracs):
+        T          = T_at(f)
+        stage      = sname(f)
+        gs_key, phase_fracs, seed_off, needle_frac = frame_state(f)
+        colors     = make_colors(gs_key, phase_fracs, seed_off)
+        _, polys   = GS[gs_key]
+
+        fig.clf()
+        ax_tt    = fig.add_subplot(1, 2, 1, facecolor=AX_BG)
+        ax_micro = fig.add_subplot(1, 2, 2, facecolor=AX_BG)
+        fig.patch.set_facecolor(BG)
+
+        # T-t panel
+        ax_tt.plot(np.array(tf_all) * 100, T_all, color=PROC_RGB, lw=2.0, alpha=0.75)
+        ax_tt.fill_between(np.array(tf_all) * 100, 0, T_all,
+                            color=PROC_RGB, alpha=0.06)
+        ax_tt.axhline(A1, color=(0.63,0.75,1.0), lw=0.9, ls='--', alpha=0.55)
+        ax_tt.text(1.5, A1 + 18, 'A₁ = 723°C', color=(0.63,0.75,1.0), fontsize=6.5)
+        if ht_temp > A1 + 5:
+            ax_tt.axhline(ht_temp, color=(0.94,0.63,0.19), lw=0.6, ls=':', alpha=0.35)
+        ax_tt.plot(f * 100, T, 'o', color='#ff6b35', ms=8, zorder=6,
+                   markeredgecolor='white', markeredgewidth=0.7)
+        ax_tt.set_xlim(0, 100)
+        ax_tt.set_ylim(0, T_max_plot)
+        ax_tt.set_xlabel('Process Progress (%)', color='#7b9fd4', fontsize=8)
+        ax_tt.set_ylabel('Temperature (°C)',      color='#7b9fd4', fontsize=8)
+        ax_tt.set_title('Temperature–Time Profile', color='#c8d8ff', fontsize=9, pad=5)
+        ax_tt.tick_params(colors='#7b9fd4', labelsize=7)
+        ax_tt.grid(True, alpha=0.06, color='#4c72b0')
+        for sp in ax_tt.spines.values():
+            sp.set_edgecolor((0.30, 0.45, 0.69, 0.35))
+        ax_tt.text(50, T_max_plot * 0.93, stage,
+                   ha='center', color='#ffd700', fontsize=9, fontweight='bold')
+        ax_tt.text(50, T_max_plot * 0.85, f'T = {T:.0f} °C',
+                   ha='center', color='#c8d8ff', fontsize=8)
+
+        # Microstructure panel
+        ax_micro.set_xlim(-0.01, 1.01)
+        ax_micro.set_ylim(-0.01, 1.01)
+        ax_micro.set_aspect('equal')
+        ax_micro.axis('off')
+        ax_micro.set_facecolor(AX_BG)
+
+        dom_phase = phase_fracs[0][0]
+        if "martensite" in dom_phase:
+            bnd = (0.40, 0.50, 0.90, 0.60)
+        elif dom_phase == "austenite":
+            bnd = (0.80, 0.70, 0.10, 0.65)
+        elif "pearlite" in dom_phase:
+            bnd = (0.55, 0.40, 0.20, 0.60)
+        else:
+            bnd = (0.45, 0.55, 0.45, 0.55)
+
+        for poly, col in zip(polys, colors):
+            if poly is None or len(poly) < 3:
+                continue
+            ax_micro.add_patch(MplPoly(poly, closed=True,
+                                        facecolor=np.clip(col, 0, 1),
+                                        edgecolor=bnd, lw=0.45))
+
+        # Martensite needle texture
+        if needle_frac > 0.1:
+            rng_n = np.random.default_rng(seed0 + fi * 7)
+            n_needles = int(50 * needle_frac)
+            for _ in range(n_needles):
+                x0, y0 = rng_n.random(), rng_n.random()
+                ang = rng_n.random() * np.pi
+                L   = 0.04 + rng_n.random() * 0.09
+                ax_micro.plot([x0, x0 + L*np.cos(ang)],
+                               [y0, y0 + L*np.sin(ang)],
+                               color=(0.65, 0.82, 1.0), lw=0.55, alpha=0.40)
+
+        n_vis = sum(1 for p in polys if p is not None)
+        ax_micro.set_title('Microstructure', color='#c8d8ff', fontsize=9, pad=5)
+        ax_micro.text(0.5, -0.03,
+                      LEGEND.get(dom_phase, dom_phase.replace("_"," ").title()),
+                      ha='center', color=(0.67, 0.77, 0.94), fontsize=7.2,
+                      transform=ax_micro.transAxes, style='italic')
+        ax_micro.text(0.98, 0.02, f'~{n_vis} grains',
+                      ha='right', va='bottom',
+                      color=(0.70, 0.80, 1.0, 0.45), fontsize=6.5,
+                      transform=ax_micro.transAxes)
+
+        plt.tight_layout(pad=1.8)
+        from io import BytesIO
+        buf = BytesIO()
+        fig.savefig(buf, format='png', dpi=92, facecolor=BG, bbox_inches='tight')
+        buf.seek(0)
+        img = Image.open(buf)
+        pil_frames.append(img.convert('P', palette=Image.ADAPTIVE, colors=220).copy())
+        buf.close()
+
+    plt.close(fig)
+
+    gif_buf = BytesIO()
+    pil_frames[0].save(
+        gif_buf, format='GIF', save_all=True,
+        append_images=pil_frames[1:],
+        duration=130, loop=0, optimize=True,
+    )
+    gif_buf.seek(0)
+    return gif_buf.read()
+
+
 def steel_grade(tensile):
     if tensile < 600:   return "Low Strength",        "#56b4d3"
     if tensile < 900:   return "Medium Strength",     "#50c878"
@@ -708,14 +1028,13 @@ st.markdown("""
 #  SIDEBAR — INPUTS
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.markdown("""
-    <div style="text-align:center;padding:10px 0 14px;">
-      <span style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;
-                   font-weight:700;color:#4c72b0;letter-spacing:0.06em;">
-        INPUT PARAMETERS
-      </span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        '<div style="text-align:center;padding:10px 0 14px;">'
+        '<span style="font-family:\'Rajdhani\',sans-serif;font-size:1.3rem;'
+        'font-weight:700;color:#4c72b0;letter-spacing:0.06em;">INPUT PARAMETERS</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     # ── Process type ───────────────────────────────────────────────────────
     st.markdown("**PROCESS TYPE**")
@@ -916,12 +1235,8 @@ else:
                 border-radius:12px;padding:14px 20px;margin-bottom:18px;
                 display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div>
-        <span style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;
-                     font-weight:700;color:{pc};">{process_label}</span>
-        <span style="font-size:0.78rem;color:rgba(180,200,255,0.5);margin-left:12px;">
-          {ht_temp:.0f}°C · {soak_time:.0f} min · {cool_medium}
-          {"  →  " + str(int(t_temp)) + "°C temper" if t_temp > 0 else ""}
-        </span>
+        <span style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:{pc};">{process_label}</span>
+        <span style="font-size:0.78rem;color:rgba(180,200,255,0.5);margin-left:12px;">{ht_temp:.0f}°C · {soak_time:.0f} min · {cool_medium}{"  →  " + str(int(t_temp)) + "°C temper" if t_temp > 0 else ""}</span>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <span style="background:{gcol}22;border:1px solid {gcol}55;
@@ -952,11 +1267,12 @@ else:
     st.markdown("<div style='margin-top:18px;'></div>", unsafe_allow_html=True)
 
     # ── Tabs ─────────────────────────────────────────────────────────────
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📊  Gauges & Radar",
         "🗺  Phase Diagram",
         "📈  T-t Profile",
         "🔬  Input Summary",
+        "🎬  Simulation",
     ])
 
     with tab1:
@@ -1021,3 +1337,65 @@ else:
         inp_df = pd.DataFrame([feat]).T.rename(columns={0: "Value"})
         inp_df["Value"] = inp_df["Value"].apply(lambda v: f"{float(v):.4f}")
         st.dataframe(inp_df, width='stretch')
+
+    with tab5:
+        st.markdown(html_section_header(
+            "Heat Treatment Microstructure Simulation",
+            "Dynamic grain-level simulation: grain growth, recrystallization, phase transformations.",
+            "🎬",
+        ), unsafe_allow_html=True)
+
+        run_sim = st.button("▶  Run Simulation", type="primary")
+        if run_sim:
+            with st.spinner("Simulating microstructure evolution… (this may take ~20 s)"):
+                gif_bytes = build_simulation_gif(
+                    process_key, float(C), float(ht_temp), float(soak_time),
+                    cool_medium, float(t_temp), float(t_time),
+                )
+
+            st.markdown("""
+            <div style="background:rgba(13,25,50,0.7);border:1px solid rgba(76,114,176,0.25);
+                        border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:0.80rem;
+                        color:rgba(180,200,255,0.65);">
+            <b style="color:#c8d8ff;">Simulation key:</b>
+            &nbsp;🟡 Austenite (γ) &nbsp;|&nbsp;
+            🟢 Ferrite (α) &nbsp;|&nbsp;
+            🟤 Pearlite &nbsp;|&nbsp;
+            🔵 Martensite (α') &nbsp;|&nbsp;
+            💙 Tempered Martensite &nbsp;|&nbsp;
+            🟣 Bainite &nbsp;—&nbsp;
+            grain boundaries shown as lines; needle texture = martensite laths.
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.image(gif_bytes, use_container_width=True)
+
+            st.download_button(
+                label="⬇  Download simulation GIF",
+                data=gif_bytes,
+                file_name=f"steelsight_sim_{process_key}_{int(ht_temp)}C.gif",
+                mime="image/gif",
+            )
+
+            # Physics summary
+            from io import BytesIO as _BytesIO
+            Ms_val = max(150.0, 539 - 423*C - 30.4*0.85 - 12.1*1.05 - 7.5*0.2)
+            K_gg   = 0.9 * np.exp(-20000 / (float(ht_temp) + 273.15)) * (float(soak_time) / 60.0)
+            n_ini  = 100
+            n_soak = max(16, int(n_ini / (1.0 + 7.0 * K_gg)))
+            grain_growth_pct = round((1 - n_soak / n_ini) * 100, 1)
+
+            with st.expander("📐 Simulation physics", expanded=False):
+                phys_rows = [
+                    ("Martensite start (Ms)",       f"{Ms_val:.0f}",  "°C"),
+                    ("Grain growth factor",          f"{K_gg:.4f}",    "—"),
+                    ("Approx. grain coarsening",     f"{grain_growth_pct}",  "%"),
+                    ("JMAK exponent (recryst.)",     "2.0 / 1.8",     "Q&T / Ann."),
+                    ("Cooling speed class",          cool_medium,      "—"),
+                ]
+                st.dataframe(
+                    pd.DataFrame(phys_rows, columns=["Parameter","Value","Unit"]).set_index("Parameter"),
+                    width='stretch',
+                )
+        else:
+            st.info("Click **▶ Run Simulation** to generate the microstructure animation for the current inputs.")
