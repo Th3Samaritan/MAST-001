@@ -582,6 +582,13 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium):
     return fig
 
 
+def _hex_to_rgba(hex_color, alpha):
+    """Convert a #rrggbb hex string to an rgba() string Plotly accepts."""
+    h = hex_color.lstrip('#')
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+
 def build_tt_profile(process_key, ht_temp, t_temp, soak_time, t_time):
     """Temperature-time schematic for the selected process."""
     PROCESS_PROFILES = {
@@ -639,7 +646,7 @@ def build_tt_profile(process_key, ht_temp, t_temp, soak_time, t_time):
     fig.add_trace(go.Scatter(
         x=times, y=temps, mode="lines",
         line=dict(color=color, width=3),
-        fill="tozeroy", fillcolor=f"{color}20",
+        fill="tozeroy", fillcolor=_hex_to_rgba(color, 0.13),
         hovertemplate="t = %{x:.1f} min<br>T = %{y:.0f} °C<extra></extra>",
         name=prof["label"],
     ))
@@ -955,14 +962,14 @@ else:
     with tab1:
         st.markdown(html_section_header("Property Gauges", "", "📊"),
                     unsafe_allow_html=True)
-        st.plotly_chart(build_gauges(preds), use_container_width=True)
+        st.plotly_chart(build_gauges(preds), width='stretch')
 
         st.markdown("---")
         c_r, c_s = st.columns([1, 1])
         with c_r:
             st.markdown(html_section_header("Performance Radar", "Normalised 0–100%", "🕸"),
                         unsafe_allow_html=True)
-            st.plotly_chart(build_radar(preds), use_container_width=True)
+            st.plotly_chart(build_radar(preds), width='stretch')
         with c_s:
             st.markdown(html_section_header("Numerical Results", "", "📋"),
                         unsafe_allow_html=True)
@@ -972,7 +979,7 @@ else:
                 rows.append({"Property": f"{icon}  {label}", "Value": f"{preds[tgt]:.1f}",
                              "Unit": unit})
             st.dataframe(pd.DataFrame(rows).set_index("Property"),
-                         use_container_width=True)
+                         width='stretch')
 
             # Computed metallurgical quantities
             st.markdown("<br>", unsafe_allow_html=True)
@@ -989,13 +996,13 @@ else:
                 meta_rows.append(("Hollomon-Jaffe H", f"{HJ:,.0f}", ""))
             st.dataframe(
                 pd.DataFrame(meta_rows, columns=["Quantity","Value","Unit"]).set_index("Quantity"),
-                use_container_width=True
+                width='stretch'
             )
 
     with tab2:
         st.plotly_chart(
             build_phase_diagram(C, float(ht_temp), float(t_temp), process_key, cool_medium),
-            use_container_width=True
+            width='stretch'
         )
         st.caption("The operating point (circle) marks the austenitizing temperature for your composition. "
                    "The diagram shows equilibrium phases; actual microstructure depends on cooling rate.")
@@ -1004,7 +1011,7 @@ else:
         st.plotly_chart(
             build_tt_profile(process_key, float(ht_temp), float(t_temp),
                              float(soak_time), float(t_time)),
-            use_container_width=True
+            width='stretch'
         )
         st.caption("Schematic temperature-time profile (times are approximate for illustration).")
 
@@ -1013,4 +1020,4 @@ else:
                     unsafe_allow_html=True)
         inp_df = pd.DataFrame([feat]).T.rename(columns={0: "Value"})
         inp_df["Value"] = inp_df["Value"].apply(lambda v: f"{float(v):.4f}")
-        st.dataframe(inp_df, use_container_width=True)
+        st.dataframe(inp_df, width='stretch')
