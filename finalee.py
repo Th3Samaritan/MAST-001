@@ -365,7 +365,6 @@ _BASE = dict(
     plot_bgcolor ="rgba(8,13,30,1)",
     paper_bgcolor="rgba(0,0,0,0)",
     font=dict(color="#c8d8ff", family="Inter, sans-serif", size=11),
-    margin=dict(l=55, r=20, t=50, b=50),
 )
 
 
@@ -398,7 +397,7 @@ def build_gauges(preds):
                                thickness=0.75, value=val),
             ),
         ), row=1, col=i)
-    fig.update_layout(**{**_BASE, "margin": dict(l=20, r=20, t=40, b=10)}, height=250)
+    fig.update_layout(**_BASE, height=250, margin=dict(l=20, r=20, t=40, b=10))
     return fig
 
 
@@ -578,7 +577,7 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium):
                    tickfont=dict(size=10)),
         legend=dict(bgcolor="rgba(8,13,30,0.7)", bordercolor="rgba(76,114,176,0.3)",
                     borderwidth=1, font=dict(size=9), x=0.01, y=0.99),
-        height=560,
+        height=560, margin=dict(l=55, r=20, t=50, b=50),
     )
     return fig
 
@@ -662,7 +661,7 @@ def build_tt_profile(process_key, ht_temp, t_temp, soak_time, t_time):
         xaxis=dict(title="Time (min)", gridcolor="rgba(200,216,255,0.07)"),
         yaxis=dict(title="Temperature (°C)", range=[0, max(ht_temp*1.1, 200)],
                    gridcolor="rgba(200,216,255,0.07)"),
-        height=360,
+        height=360, margin=dict(l=55, r=20, t=50, b=50),
     )
     return fig
 
