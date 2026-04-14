@@ -29,158 +29,305 @@ st.set_page_config(
 # ══════════════════════════════════════════════════════════════════════════════
 #  DESIGN SYSTEM
 # ══════════════════════════════════════════════════════════════════════════════
-st.markdown("""
+# Theme variant from sidebar toggle (read from session_state set by the toggle widget)
+_THEME_CRYO = st.session_state.get("miq_theme_cryo", False)
+_A_HOT  = "#6fa8ff" if _THEME_CRYO else "#ff7b2e"
+_A_WARM = "#89c8ff" if _THEME_CRYO else "#ffb840"
+_A_COOL = "#3db8ff"
+_A_PLSM = "#8a6cff"
+
+st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@500;700&display=swap');
 
-html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
-#MainMenu, footer, header { visibility: hidden; }
+:root {{
+    --bg-0: #020510;
+    --bg-1: #060c1c;
+    --bg-2: #0a1428;
+    --fg-0: #e8f0ff;
+    --fg-1: #a8c0e5;
+    --fg-2: #6a88b2;
+    --accent-hot: {_A_HOT};
+    --accent-warm: {_A_WARM};
+    --accent-cool: {_A_COOL};
+    --accent-plasma: {_A_PLSM};
+    --border-dim: rgba(100,160,240,0.14);
+    --border-mid: rgba(100,160,240,0.24);
+    --card-bg: rgba(8,14,28,0.72);
+}}
 
-.stApp {
-    background: radial-gradient(ellipse at 18% 8%, #0a1428 0%, #040710 55%, #080c18 100%);
+html, body, [class*="css"] {{ font-family: 'Inter', sans-serif !important; color: var(--fg-1) !important; }}
+
+/* Hide Streamlit chrome but keep sidebar toggle accessible (critical for mobile) */
+#MainMenu, footer {{ visibility: hidden !important; }}
+[data-testid="stDecoration"] {{ display: none !important; }}
+[data-testid="stToolbar"] {{ visibility: hidden !important; }}
+header[data-testid="stHeader"] {{ background: transparent !important; height: auto !important; }}
+[data-testid="collapsedControl"] {{
+    visibility: visible !important;
+    display: flex !important;
+    background: rgba(8,14,28,0.90) !important;
+    border: 1px solid var(--border-mid) !important;
+    border-radius: 10px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 0 18px rgba(61,184,255,0.22) !important;
+}}
+
+/* ── Dynamic molten + plasma background ── */
+.stApp {{
+    background:
+        radial-gradient(ellipse 70% 45% at 16% 6%,  rgba(255,123,46,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 65% 45% at 86% 94%, rgba(61,184,255,0.08) 0%, transparent 62%),
+        radial-gradient(ellipse 100% 80% at 50% 50%, #060c1c 0%, #020510 68%, #000208 100%);
     min-height: 100vh;
-}
+    position: relative;
+}}
+.stApp::before {{
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: conic-gradient(from 0deg at 50% 50%,
+        transparent 0deg,
+        rgba(61,184,255,0.022) 60deg,
+        transparent 120deg,
+        rgba(255,123,46,0.020) 240deg,
+        transparent 320deg);
+    animation: miq-sweep 38s linear infinite;
+}}
+.stApp::after {{
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+        radial-gradient(circle at 22% 28%, rgba(61,184,255,0.045) 0%, transparent 28%),
+        radial-gradient(circle at 78% 72%, rgba(255,123,46,0.038) 0%, transparent 28%);
+    animation: miq-pulse 9s ease-in-out infinite alternate;
+}}
+@keyframes miq-sweep {{ from{{transform:rotate(0)}} to{{transform:rotate(360deg)}} }}
+@keyframes miq-pulse {{ from{{opacity:0.55}} to{{opacity:1}} }}
+@keyframes miq-shimmer {{
+    0%  {{ background-position: -200% 0; }}
+    100% {{ background-position: 200% 0; }}
+}}
+
+[data-testid="stAppViewContainer"] > .main {{ position: relative; z-index: 1; }}
 
 /* ── Sidebar ── */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg,#060918 0%,#080d1e 55%,#040710 100%) !important;
-    border-right: 1px solid rgba(0,170,255,0.14) !important;
-}
-[data-testid="stSidebar"] .block-container { padding: 0.9rem !important; }
-[data-testid="stSidebar"] label {
-    color: rgba(170,205,255,0.65) !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 0.08em !important;
+[data-testid="stSidebar"] {{
+    background: linear-gradient(180deg,
+        rgba(6,12,26,0.97) 0%,
+        rgba(10,16,32,0.94) 45%,
+        rgba(4,8,18,0.98) 100%) !important;
+    border-right: 1px solid var(--border-dim) !important;
+    backdrop-filter: blur(14px) !important;
+}}
+[data-testid="stSidebar"]::before {{
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-hot) 22%,
+                var(--accent-cool) 78%, transparent);
+    opacity: 0.8; z-index: 10;
+}}
+[data-testid="stSidebar"] .block-container {{ padding: 1.0rem 0.95rem !important; }}
+[data-testid="stSidebar"] label {{
+    color: var(--fg-2) !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.12em !important;
     text-transform: uppercase !important;
     font-weight: 600 !important;
-}
+}}
 
-/* ── Inputs ── */
-.stNumberInput input {
-    background: rgba(6,12,32,0.92) !important;
-    border: 1px solid rgba(0,150,255,0.22) !important;
-    border-radius: 7px !important;
-    color: #d0e8ff !important;
+/* ── Number input ── */
+.stNumberInput input {{
+    background: rgba(4,10,24,0.92) !important;
+    border: 1px solid var(--border-mid) !important;
+    border-radius: 8px !important;
+    color: var(--fg-0) !important;
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.86rem !important;
-}
-.stNumberInput input:focus {
-    border-color: rgba(0,180,255,0.70) !important;
-    box-shadow: 0 0 0 2px rgba(0,170,255,0.14) !important;
-}
-.stNumberInput button {
-    background: rgba(6,12,32,0.92) !important;
-    border: 1px solid rgba(0,150,255,0.18) !important;
-    color: #4ea8d8 !important;
-}
+    transition: all 0.22s ease !important;
+}}
+.stNumberInput input:focus {{
+    border-color: var(--accent-cool) !important;
+    box-shadow: 0 0 0 3px rgba(61,184,255,0.13), 0 0 24px rgba(61,184,255,0.22) !important;
+}}
+.stNumberInput button {{
+    background: rgba(4,10,24,0.92) !important;
+    border: 1px solid var(--border-dim) !important;
+    color: var(--accent-cool) !important;
+}}
 
 /* ── Sliders ── */
-[data-testid="stSlider"] > div > div > div > div {
-    background: linear-gradient(90deg,#004ecc,#00b4ff) !important;
-}
-[data-testid="stSlider"] [role="slider"] {
-    background: #e8f4ff !important;
-    border: 2px solid #00b4ff !important;
-    box-shadow: 0 0 10px rgba(0,180,255,0.55) !important;
-}
-[data-testid="stSlider"] p {
-    font-family:'JetBrains Mono',monospace !important;
-    font-size:0.78rem !important;
-    color:#4ea8d8 !important;
-}
+[data-testid="stSlider"] > div > div > div > div {{
+    background: linear-gradient(90deg, var(--accent-hot) 0%, var(--accent-cool) 100%) !important;
+    height: 5px !important;
+}}
+[data-testid="stSlider"] [role="slider"] {{
+    background: var(--fg-0) !important;
+    border: 2px solid var(--accent-cool) !important;
+    box-shadow: 0 0 14px rgba(61,184,255,0.60), 0 0 6px rgba(255,123,46,0.35) !important;
+    width: 18px !important; height: 18px !important;
+}}
+[data-testid="stSlider"] p {{
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.78rem !important;
+    color: var(--accent-cool) !important;
+}}
 
-/* ── Buttons ── */
-.stButton > button[kind="primary"] {
-    background: linear-gradient(135deg,#003580 0%,#005acc 50%,#0048b0 100%) !important;
-    border: 1px solid rgba(0,170,255,0.45) !important;
-    color: #ddf0ff !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
-    font-size: 0.88rem !important;
+/* ── Select ── */
+.stSelectbox > div > div {{
+    background: rgba(4,10,24,0.92) !important;
+    border: 1px solid var(--border-mid) !important;
+    border-radius: 8px !important;
+    color: var(--fg-0) !important;
+}}
+
+/* ── Toggle (theme switcher) ── */
+[data-testid="stToggle"] label p {{
+    color: var(--fg-1) !important;
+    font-size: 0.74rem !important;
     letter-spacing: 0.10em !important;
+    font-weight: 600 !important;
+}}
+[data-testid="stToggle"] [data-baseweb="toggle"] > div:first-child {{
+    background: linear-gradient(90deg, var(--accent-hot), var(--accent-cool)) !important;
+}}
+
+/* ── Primary button (with shimmer sweep on hover) ── */
+.stButton > button[kind="primary"] {{
+    background: linear-gradient(135deg, #002a60 0%, #004db0 42%, #005bcc 72%, #003680 100%) !important;
+    border: 1px solid rgba(61,184,255,0.55) !important;
+    color: var(--fg-0) !important;
+    border-radius: 11px !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+    letter-spacing: 0.16em !important;
     text-transform: uppercase !important;
-    padding: 0.60rem 1.4rem !important;
-    box-shadow: 0 4px 22px rgba(0,90,204,0.40) !important;
-    transition: all 0.22s ease !important;
-    width: 100%;
-}
-.stButton > button[kind="primary"]:hover {
-    background: linear-gradient(135deg,#005acc 0%,#0088ff 50%,#006cd8 100%) !important;
-    box-shadow: 0 6px 30px rgba(0,136,255,0.55) !important;
+    padding: 0.78rem 1.4rem !important;
+    box-shadow: 0 6px 30px rgba(0,90,204,0.45),
+                inset 0 1px 0 rgba(255,255,255,0.14) !important;
+    transition: all 0.28s cubic-bezier(.2,.8,.4,1) !important;
+    width: 100% !important;
+    position: relative !important;
+    overflow: hidden !important;
+}}
+.stButton > button[kind="primary"]::before {{
+    content: ""; position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+    transition: left 0.7s ease;
+}}
+.stButton > button[kind="primary"]:hover::before {{ left: 100%; }}
+.stButton > button[kind="primary"]:hover {{
+    background: linear-gradient(135deg, #003680 0%, #006ad0 42%, #0080e8 72%, #0052b0 100%) !important;
+    box-shadow: 0 8px 38px rgba(0,140,255,0.58),
+                inset 0 1px 0 rgba(255,255,255,0.22),
+                0 0 0 1px rgba(61,184,255,0.55) !important;
     transform: translateY(-2px) !important;
-}
+}}
+.stButton > button[kind="primary"]:active {{ transform: translateY(-1px) scale(0.99) !important; }}
 
 /* ── Tabs ── */
-.stTabs [data-baseweb="tab-list"] {
-    background: rgba(4,7,16,0.88) !important;
-    border: 1px solid rgba(0,150,255,0.14) !important;
-    border-radius: 12px !important;
-    padding: 5px !important;
-    gap: 3px !important;
-    overflow-x: auto !important;
-    flex-wrap: nowrap !important;
-}
-.stTabs [data-baseweb="tab"] {
-    border-radius: 8px !important;
-    color: rgba(150,190,235,0.48) !important;
+.stTabs [data-baseweb="tab-list"] {{
+    background: rgba(4,10,24,0.90) !important;
+    border: 1px solid var(--border-dim) !important;
+    border-radius: 14px !important;
+    padding: 5px !important; gap: 3px !important;
+    overflow-x: auto !important; flex-wrap: nowrap !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.32) !important;
+}}
+.stTabs [data-baseweb="tab"] {{
+    border-radius: 9px !important;
+    color: var(--fg-2) !important;
+    font-family: 'Rajdhani', sans-serif !important;
     font-weight: 600 !important;
-    font-size: 0.84rem !important;
-    padding: 0.40rem 1.05rem !important;
+    font-size: 0.88rem !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    padding: 0.44rem 1.10rem !important;
     white-space: nowrap !important;
-    transition: all 0.18s !important;
-}
-.stTabs [data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(135deg,rgba(0,90,200,0.38),rgba(0,180,255,0.18)) !important;
-    color: #ddf0ff !important;
-    box-shadow: 0 0 14px rgba(0,140,255,0.18) !important;
-}
+    transition: all 0.22s !important;
+}}
+.stTabs [data-baseweb="tab"]:hover {{
+    color: var(--fg-1) !important;
+    background: rgba(61,184,255,0.08) !important;
+}}
+.stTabs [data-baseweb="tab"][aria-selected="true"] {{
+    background: linear-gradient(135deg, rgba(255,123,46,0.18), rgba(61,184,255,0.22)) !important;
+    color: var(--fg-0) !important;
+    box-shadow: 0 0 22px rgba(61,184,255,0.24),
+                inset 0 1px 0 rgba(255,255,255,0.10) !important;
+}}
 
-/* ── Cards / expanders ── */
-[data-testid="stExpander"] {
-    background: rgba(4,7,18,0.65) !important;
-    border: 1px solid rgba(0,150,255,0.12) !important;
+/* ── Expander ── */
+[data-testid="stExpander"] {{
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-dim) !important;
+    border-radius: 11px !important;
+    backdrop-filter: blur(8px) !important;
+}}
+[data-testid="stExpander"] summary {{ color: var(--fg-1) !important; font-size: 0.82rem !important; }}
+
+/* ── DataFrame ── */
+.stDataFrame {{
     border-radius: 10px !important;
-}
-[data-testid="stExpander"] summary {
-    color: rgba(150,190,235,0.75) !important;
-    font-size:0.83rem !important;
-}
+    overflow: hidden !important;
+    border: 1px solid var(--border-dim) !important;
+}}
 
-/* ── Misc ── */
-hr { border-color: rgba(0,150,255,0.14) !important; }
-.block-container { padding: 1.5rem 2.0rem 1rem !important; max-width:1440px !important; }
-.stSelectbox > div > div {
-    background: rgba(6,12,32,0.92) !important;
-    border: 1px solid rgba(0,150,255,0.28) !important;
-    border-radius: 7px !important;
-    color: #d0e8ff !important;
-}
-.stDataFrame { border-radius: 10px !important; overflow: hidden !important; }
+hr {{ border: none !important; border-top: 1px solid var(--border-dim) !important; margin: 14px 0 !important; }}
 
-/* ── Metric cards grid (mobile-first CSS grid) ── */
-.miq-cards {
+.block-container {{
+    padding: 1.5rem 2.0rem 1rem !important;
+    max-width: 1440px !important;
+    position: relative;
+    z-index: 1;
+}}
+
+/* ── Metric cards grid ── */
+.miq-cards {{
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 14px;
     margin: 0 0 18px;
-}
+}}
+
+.miq-mobile-hint {{ display: none; }}
 
 /* ── Mobile breakpoints ── */
-@media (max-width: 768px) {
-    .block-container { padding: 0.65rem 0.75rem 0.5rem !important; }
-    .stTabs [data-baseweb="tab"] {
-        font-size: 0.72rem !important;
-        padding: 0.30rem 0.60rem !important;
-    }
-    .miq-hero-title { font-size: 2.0rem !important; }
-    .miq-hero-sub   { font-size: 0.74rem !important; }
-    .miq-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-}
-@media (max-width: 480px) {
-    .miq-hero-title { font-size: 1.6rem !important; }
-    .miq-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
-    .block-container { padding: 0.4rem !important; }
-}
+@media (max-width: 1024px) {{
+    .block-container {{ padding: 1.0rem 1.2rem 0.8rem !important; }}
+}}
+@media (max-width: 768px) {{
+    .block-container {{ padding: 0.75rem 0.85rem 0.6rem !important; }}
+    .stTabs [data-baseweb="tab"] {{
+        font-size: 0.68rem !important;
+        padding: 0.32rem 0.62rem !important;
+        letter-spacing: 0.04em !important;
+    }}
+    .miq-hero-title {{ font-size: 2.1rem !important; letter-spacing: 0.04em !important; }}
+    .miq-hero-sub {{ font-size: 0.66rem !important; letter-spacing: 0.14em !important; }}
+    .miq-cards {{ grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }}
+    [data-testid="collapsedControl"] {{
+        top: 0.6rem !important; left: 0.6rem !important;
+        width: 44px !important; height: 44px !important;
+    }}
+    .miq-mobile-hint {{
+        display: flex !important;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(135deg, rgba(255,123,46,0.14), rgba(61,184,255,0.14));
+        border: 1px solid var(--border-mid);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin: 0 0 14px;
+        font-size: 0.76rem;
+        color: var(--fg-1);
+    }}
+}}
+@media (max-width: 480px) {{
+    .miq-hero-title {{ font-size: 1.6rem !important; }}
+    .miq-hero-sub {{ font-size: 0.56rem !important; letter-spacing: 0.10em !important; }}
+    .miq-cards {{ grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }}
+    .block-container {{ padding: 0.45rem !important; }}
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -477,9 +624,14 @@ def build_radar(preds):
 def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
                           Mn=0.85, Cr=1.05, Mo=0.20):
     """
-    Enhanced Fe-C equilibrium phase diagram.
-    Includes: delta-ferrite region, peritectic, liquidus, A1/A3/Acm,
-    eutectoid (S), Ms + Bs lines, heat treatment path arrows, rich hover.
+    Immersive Fe-C phase diagram:
+    - Thermal heatmap background (liquid metal glows, solid phases subdued)
+    - Translucent phase-region fills with distinct colors
+    - Sharp phase-boundary lines (A3, Acm, A1, Liquidus, Solidus, Ms, Bs)
+    - Process temperature lines, carbon line, heating/cooling arrows
+    - Operating point with multi-ring glow effect
+    - Special points: Eutectoid (S), Peritectic (P)
+    - Horizontal legend placed below the chart to avoid overlap
     """
     A1=723; A3_FE=912; PERIT=1495; MELT=1538; EUTE=1147
     C_EUT=0.76; C_AUS=2.11; MAX_C=2.3; C_PER=0.17
@@ -490,192 +642,276 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
     Ms_val = max(80.0,  539 - 423*C_val - 30.4*Mn - 12.1*Cr - 7.5*Mo)
     Bs_val = max(300.0, 720 - 270*C_val - 90*Mn  - 70*Cr)
 
+    # ── Build thermal heatmap background (vectorized) ──
+    nC, nT = 220, 300
+    C_arr = np.linspace(0, MAX_C, nC)
+    T_arr = np.linspace(0, 1650, nT)
+    CC, TT = np.meshgrid(C_arr, T_arr)
+
+    A3_V  = np.where(CC <= C_EUT, A3_FE - (A3_FE-A1)/C_EUT * CC, A1)
+    ACM_V = np.where(CC > C_EUT,  A1 + (EUTE-A1)/(C_AUS-C_EUT) * (CC - C_EUT), EUTE)
+
+    Z = np.full_like(CC, 0.08, dtype=float)
+
+    m = (TT < A1) & (CC <= 0.022)
+    Z[m] = 0.08
+    m = (TT < A1) & (CC > 0.022) & (CC <= C_EUT)
+    Z[m] = 0.14
+    m = (TT < A1) & (CC > C_EUT)
+    Z[m] = 0.11
+
+    m_ga = (CC <= C_EUT) & (TT >= A1) & (TT < A3_V)
+    Z[m_ga] = 0.30
+    m_gc = (CC > C_EUT) & (CC <= C_AUS) & (TT >= A1) & (TT < ACM_V)
+    Z[m_gc] = 0.28
+
+    m_au = ((CC <= C_EUT) & (TT >= A3_V)) | \
+           ((CC > C_EUT)  & (CC <= C_AUS) & (TT >= ACM_V))
+    m_au &= (TT < 1280)
+    Z[m_au] = np.clip(0.44 + (TT[m_au] - 720) / 1800, 0.44, 0.62)
+
+    m_hot = (TT >= 1280) & (TT < MELT) & (CC <= C_AUS)
+    Z[m_hot] = np.clip(0.64 + (TT[m_hot] - 1280) / 1000, 0.64, 0.83)
+
+    m_dl = (CC <= C_PER) & (TT >= PERIT) & (TT < MELT + 80)
+    Z[m_dl] = np.clip(0.80 + (TT[m_dl] - PERIT) / 900, 0.80, 0.92)
+
+    m_liq = (TT >= MELT) | \
+            ((TT >= PERIT) & (CC <= C_PER) & (TT >= MELT - 40)) | \
+            ((TT >= EUTE)  & (CC >= C_AUS))
+    Z[m_liq] = np.clip(0.90 + (TT[m_liq] - EUTE) / 1600, 0.90, 1.0)
+
+    Z = np.clip(Z, 0.0, 1.0)
+
+    THERMAL_CS = [
+        [0.00, "rgb(2,3,12)"],
+        [0.08, "rgb(5,7,22)"],
+        [0.14, "rgb(10,12,30)"],
+        [0.22, "rgb(18,14,18)"],
+        [0.32, "rgb(36,18,10)"],
+        [0.44, "rgb(66,22,2)"],
+        [0.55, "rgb(110,40,0)"],
+        [0.65, "rgb(165,65,2)"],
+        [0.75, "rgb(215,100,8)"],
+        [0.85, "rgb(248,150,25)"],
+        [0.92, "rgb(255,200,70)"],
+        [1.00, "rgb(255,245,185)"],
+    ]
+
     fig = go.Figure()
 
-    # Phase region fills
+    fig.add_trace(go.Heatmap(
+        x=C_arr, y=T_arr, z=Z,
+        colorscale=THERMAL_CS, showscale=False,
+        zmin=0.0, zmax=1.0,
+        hoverinfo="skip",
+    ))
+
+    # ── Phase region color fills (translucent overlay) ──
     regions = [
-        ([0, 0.022, 0.022, 0],           [0, 0, A1, A1],
-         "rgba(80,200,120,0.22)", "Ferrite (alpha)"),
-        ([0.022, C_EUT, C_EUT, 0.022],   [0, 0, A1, A1],
-         "rgba(86,180,211,0.22)", "Ferrite + Pearlite"),
-        ([C_EUT, MAX_C, MAX_C, C_EUT],   [0, 0, A1, A1],
-         "rgba(176,122,214,0.22)", "Pearlite + Fe3C"),
-        ([0, C_EUT, 0],                  [A3_FE, A1, A1],
-         "rgba(255,140,48,0.22)", "Austenite + Ferrite"),
-        ([C_EUT, MAX_C, MAX_C, C_AUS],   [A1, A1, EUTE, EUTE],
-         "rgba(255,92,106,0.22)", "Austenite + Fe3C"),
-        ([0, C_PER, C_AUS, C_EUT, 0],    [MELT, PERIT, EUTE, A1, A3_FE],
-         "rgba(255,215,0,0.13)", "Austenite (gamma)"),
-        ([0, MAX_C, MAX_C, C_AUS, C_PER, 0],
-         [MELT, EUTE, 1620, 1620, PERIT, MELT],
-         "rgba(240,230,140,0.13)", "Liquid"),
-        ([0, C_PER, C_PER, 0],           [MELT, PERIT, 1580, 1580],
-         "rgba(180,225,255,0.20)", "delta-Ferrite + Liquid"),
+        ([0, 0.022, 0.022, 0],            [0,0,A1,A1],
+         "rgba(80,200,120,0.28)",  "Ferrite (α)"),
+        ([0.022,C_EUT,C_EUT,0.022],       [0,0,A1,A1],
+         "rgba(86,180,211,0.22)",  "Ferrite + Pearlite"),
+        ([C_EUT,MAX_C,MAX_C,C_EUT],       [0,0,A1,A1],
+         "rgba(176,122,214,0.22)", "Pearlite + Fe₃C"),
+        ([0,C_EUT,0],                     [A3_FE,A1,A1],
+         "rgba(255,140,48,0.20)",  "Austenite + Ferrite"),
+        ([C_EUT,MAX_C,MAX_C,C_AUS],       [A1,A1,EUTE,EUTE],
+         "rgba(255,92,106,0.20)",  "Austenite + Fe₃C"),
+        ([0,C_PER,C_AUS,C_EUT,0],         [MELT,PERIT,EUTE,A1,A3_FE],
+         "rgba(255,215,0,0.14)",   "Austenite (γ)"),
+        ([0,C_PER,C_PER,0],               [MELT,PERIT,1640,1640],
+         "rgba(170,225,255,0.22)", "δ-Ferrite + Liquid"),
+        ([0,MAX_C,MAX_C,C_AUS,C_PER,0],   [MELT,EUTE,1650,1650,PERIT,MELT],
+         "rgba(255,245,180,0.10)", "Liquid"),
     ]
     for xs, ys, fill, lbl in regions:
         fig.add_trace(go.Scatter(
             x=xs, y=ys, fill="toself", fillcolor=fill,
-            line=dict(width=0.6, color="rgba(255,255,255,0.12)"),
-            mode="lines",
-            hovertemplate=f"<b>{lbl}</b><br>C = %{{x:.3f}} wt%<br>T = %{{y:.0f}} C<extra></extra>",
-            showlegend=False,
+            line=dict(width=0),
+            mode="lines", showlegend=False,
+            hovertemplate=f"<b>{lbl}</b><br>C=%{{x:.3f}} wt%  T=%{{y:.0f}} °C<extra></extra>",
         ))
 
-    # Liquidus line
-    liq_c, liq_T = [], []
-    for c in np.linspace(0, MAX_C, 400):
-        if c <= C_PER:
-            liq_T.append(MELT - (MELT-PERIT)/C_PER * c)
-        elif c <= C_AUS:
-            liq_T.append(PERIT + (EUTE-PERIT)/(C_AUS-C_PER) * (c-C_PER))
-        else:
-            liq_T.append(EUTE)
-        liq_c.append(c)
-    fig.add_trace(go.Scatter(x=liq_c, y=liq_T,
-        line=dict(color="rgba(240,230,140,0.65)", width=1.6),
-        mode="lines", name="Liquidus",
-        hovertemplate="Liquidus: %{y:.0f}C<extra></extra>"))
-
-    # A3 line
-    a3_c = np.linspace(0, C_EUT, 200)
-    fig.add_trace(go.Scatter(x=a3_c, y=[_a3(c) for c in a3_c],
-        line=dict(color="#f0a030", width=2.0),
-        mode="lines", name="A3 line",
-        hovertemplate="A3: %{y:.0f}C at C = %{x:.3f}%<extra></extra>"))
-
-    # Acm line
-    acm_c = np.linspace(C_EUT, MAX_C, 200)
-    fig.add_trace(go.Scatter(x=acm_c, y=[_acm(c) for c in acm_c],
-        line=dict(color="#e05050", width=2.0),
-        mode="lines", name="Acm line",
-        hovertemplate="Acm: %{y:.0f}C at C = %{x:.3f}%<extra></extra>"))
-
-    # A1 line
-    fig.add_trace(go.Scatter(x=[0, MAX_C], y=[A1, A1],
-        line=dict(color="#80aaee", width=1.8, dash="dot"),
-        mode="lines", name="A1 = 723C"))
-
-    # Eutectoid (S)
-    fig.add_trace(go.Scatter(x=[C_EUT], y=[A1], mode="markers+text",
-        marker=dict(size=9, color="#ffd700", symbol="diamond",
-                    line=dict(color="white", width=1.5)),
-        text=["S (0.76%, 723C)"], textposition="top right",
-        textfont=dict(size=9, color="#ffd700"),
-        name="Eutectoid (S)"))
-
-    # Peritectic (P)
-    fig.add_trace(go.Scatter(x=[C_PER], y=[PERIT], mode="markers+text",
-        marker=dict(size=9, color="#60c4ff", symbol="triangle-up",
-                    line=dict(color="white", width=1.5)),
-        text=["P (0.17%, 1495C)"], textposition="top right",
-        textfont=dict(size=9, color="#60c4ff"),
-        name="Peritectic (P)"))
-
-    # Ms line
+    # ── Phase boundary lines ──
+    liq_c = np.linspace(0, MAX_C, 400)
+    liq_T = [MELT-(MELT-PERIT)/C_PER*c if c<=C_PER else
+             PERIT+(EUTE-PERIT)/(C_AUS-C_PER)*(c-C_PER) if c<=C_AUS else
+             EUTE+(1640-EUTE)/(MAX_C-C_AUS)*(c-C_AUS)
+             for c in liq_c]
     fig.add_trace(go.Scatter(
-        x=[0, MAX_C], y=[Ms_val, Ms_val],
-        line=dict(color="rgba(130,110,255,0.65)", width=1.4, dash="dashdot"),
-        mode="lines+text",
-        text=["", f"Ms = {Ms_val:.0f}C"],
-        textposition="middle right", textfont=dict(size=9, color="#9090ff"),
-        name=f"Ms = {Ms_val:.0f}C"))
+        x=liq_c, y=liq_T,
+        line=dict(color="rgba(255,245,170,0.90)", width=2.2),
+        mode="lines", name="Liquidus",
+        hovertemplate="Liquidus: %{y:.0f} °C<extra></extra>"))
 
-    # Bs line
+    a3_c = np.linspace(0, C_EUT, 200)
+    fig.add_trace(go.Scatter(
+        x=a3_c, y=[_a3(c) for c in a3_c],
+        line=dict(color="#f5b840", width=2.2),
+        mode="lines", name="A3 line",
+        hovertemplate="A3 = %{y:.0f} °C<extra></extra>"))
+
+    acm_c = np.linspace(C_EUT, C_AUS, 200)
+    fig.add_trace(go.Scatter(
+        x=acm_c, y=[_acm(c) for c in acm_c],
+        line=dict(color="#e85060", width=2.2),
+        mode="lines", name="Acm line",
+        hovertemplate="Acm = %{y:.0f} °C<extra></extra>"))
+
+    fig.add_trace(go.Scatter(
+        x=[0, MAX_C], y=[A1, A1],
+        line=dict(color="#88aaff", width=2.0, dash="dot"),
+        mode="lines", name="A1 = 723 °C"))
+
+    # Solidus (δ region lower boundary)
+    fig.add_trace(go.Scatter(
+        x=[0, C_PER], y=[MELT, PERIT],
+        line=dict(color="rgba(160,220,255,0.60)", width=1.7, dash="dot"),
+        mode="lines", name="δ Solidus"))
+
+    # Ms
+    fig.add_trace(go.Scatter(
+        x=[0, C_EUT+0.2], y=[Ms_val, Ms_val],
+        line=dict(color="rgba(170,150,255,0.78)", width=1.6, dash="dashdot"),
+        mode="lines",
+        name=f"Ms = {Ms_val:.0f} °C",
+        hovertemplate="Martensite start: %{y:.0f} °C<extra></extra>"))
+
+    # Bs
     if Bs_val > Ms_val + 30:
         fig.add_trace(go.Scatter(
-            x=[0, MAX_C], y=[Bs_val, Bs_val],
-            line=dict(color="rgba(170,90,220,0.50)", width=1.2, dash="dashdot"),
-            mode="lines+text",
-            text=["", f"Bs = {Bs_val:.0f}C"],
-            textposition="middle right", textfont=dict(size=9, color="#b06ee0"),
-            name=f"Bs = {Bs_val:.0f}C"))
+            x=[0, C_EUT+0.2], y=[Bs_val, Bs_val],
+            line=dict(color="rgba(200,150,255,0.58)", width=1.3, dash="dashdot"),
+            mode="lines",
+            name=f"Bs = {Bs_val:.0f} °C",
+            hovertemplate="Bainite start: %{y:.0f} °C<extra></extra>"))
 
-    # Process temperature lines
+    # ── Special invariant points ──
+    fig.add_trace(go.Scatter(
+        x=[C_EUT], y=[A1], mode="markers",
+        marker=dict(size=12, color="#ffd700", symbol="diamond",
+                    line=dict(color="white", width=2)),
+        name="S — Eutectoid",
+        hovertemplate="<b>Eutectoid (S)</b><br>0.76 wt%  ·  723 °C<extra></extra>"))
+    fig.add_trace(go.Scatter(
+        x=[C_PER], y=[PERIT], mode="markers",
+        marker=dict(size=12, color="#60c4ff", symbol="triangle-up",
+                    line=dict(color="white", width=2)),
+        name="P — Peritectic",
+        hovertemplate="<b>Peritectic (P)</b><br>0.17 wt%  ·  1495 °C<extra></extra>"))
+
+    # ── Process + carbon lines (no legend entries — labels on-plot) ──
     fig.add_trace(go.Scatter(
         x=[0, MAX_C], y=[ht_temp, ht_temp],
-        line=dict(color="#00b4ff", width=1.8, dash="dashdot"),
+        line=dict(color="#00d8ff", width=2.0, dash="dashdot"),
         mode="lines+text",
-        text=["", f"Austenitize {ht_temp:.0f}C"],
-        textposition="middle right", textfont=dict(size=9, color="#00b4ff"),
-        name=f"Austenitize {ht_temp:.0f}C"))
-
+        text=["", f"Austenitize {ht_temp:.0f}°C"],
+        textposition="middle right",
+        textfont=dict(size=9, color="#00d8ff"),
+        name="Austenitize", showlegend=False))
     if t_temp > 0:
         fig.add_trace(go.Scatter(
             x=[0, MAX_C], y=[t_temp, t_temp],
-            line=dict(color="#f0a030", width=1.5, dash="dashdot"),
+            line=dict(color="#ffb030", width=1.6, dash="dashdot"),
             mode="lines+text",
-            text=["", f"Temper {t_temp:.0f}C"],
-            textposition="middle right", textfont=dict(size=9, color="#f0a030"),
-            name=f"Temper {t_temp:.0f}C"))
-
-    # Carbon vertical line
+            text=["", f"Temper {t_temp:.0f}°C"],
+            textposition="middle right",
+            textfont=dict(size=9, color="#ffb030"),
+            name="Temper", showlegend=False))
     fig.add_trace(go.Scatter(
-        x=[C_val, C_val], y=[0, 1620],
-        line=dict(color="rgba(80,227,194,0.60)", width=1.5, dash="dot"),
+        x=[C_val, C_val], y=[0, 1640],
+        line=dict(color="rgba(80,230,190,0.70)", width=1.6, dash="dot"),
         mode="lines+text",
         text=[f"C={C_val:.2f}%", ""],
-        textposition="top right", textfont=dict(size=9, color="#50e3c2"),
-        name=f"C = {C_val:.2f}%"))
+        textposition="top right",
+        textfont=dict(size=9, color="#50e3c2"),
+        name=f"C = {C_val:.2f}%", showlegend=False))
 
-    # Heating path arrow
-    offset_x = min(C_val + 0.06, MAX_C - 0.05)
-    fig.add_annotation(
-        x=offset_x, y=ht_temp, ax=offset_x, ay=80,
-        xref="x", yref="y", axref="x", ayref="y",
-        arrowhead=3, arrowcolor="#ff6b35", arrowwidth=2.5, arrowside="end",
-        text="", showarrow=True)
-
-    # Cooling path arrow
+    # ── Heating + cooling arrows ──
+    ax_off = min(C_val + 0.08, MAX_C - 0.14)
     COOL_COLS = {"Water":"#60c4ff","Oil":"#f0a030","Polymer":"#c860ff",
                  "Air":"#50e3c2","Furnace":"#ff6b35","Salt Bath":"#ffd700"}
     cool_col = COOL_COLS.get(cool_medium, "#aaaaaa")
-    end_T    = Ms_val if cool_medium in ["Water","Oil","Polymer","Salt Bath"] else 200
+    end_T = Ms_val if cool_medium in ["Water","Oil","Polymer","Salt Bath"] else 200
+
     fig.add_annotation(
-        x=offset_x+0.06, y=end_T, ax=offset_x+0.06, ay=ht_temp,
+        x=ax_off, y=ht_temp, ax=ax_off, ay=80,
         xref="x", yref="y", axref="x", ayref="y",
-        arrowhead=3, arrowcolor=cool_col, arrowwidth=2.5, arrowside="end",
+        arrowhead=4, arrowcolor="#ff8844", arrowwidth=3.0, arrowside="end",
+        text="", showarrow=True)
+    fig.add_annotation(
+        x=ax_off+0.10, y=end_T, ax=ax_off+0.10, ay=ht_temp,
+        xref="x", yref="y", axref="x", ayref="y",
+        arrowhead=4, arrowcolor=cool_col, arrowwidth=3.0, arrowside="end",
         text="", showarrow=True)
 
-    # Operating point
+    # ── Operating point with multi-ring glow ──
     op_phase = get_phase(C_val, ht_temp)
     op_color = PHASE_COLORS.get(op_phase, "#ffffff")
+    for sz, opa in [(34, 0.07), (24, 0.13), (16, 0.22)]:
+        fig.add_trace(go.Scatter(
+            x=[C_val], y=[ht_temp], mode="markers",
+            marker=dict(size=sz, color=op_color, opacity=opa),
+            showlegend=False, hoverinfo="skip"))
     fig.add_trace(go.Scatter(
         x=[C_val], y=[ht_temp], mode="markers",
-        marker=dict(size=16, color=op_color, symbol="circle",
-                    line=dict(color="white", width=2.5)),
+        marker=dict(size=14, color=op_color, symbol="circle",
+                    line=dict(color="white", width=2.6)),
         name="Operating point",
-        hovertemplate=(f"<b>Austenitizing Condition</b><br>"
-                       f"C = {C_val:.3f} wt%<br>T = {ht_temp:.0f} C<br>"
+        hovertemplate=(f"<b>Austenitizing condition</b><br>"
+                       f"C = {C_val:.3f} wt%<br>T = {ht_temp:.0f} °C<br>"
                        f"Phase: <b>{op_phase}</b><extra></extra>")))
 
-    # Phase region text labels
+    # ── Phase region labels ──
     for lx, ly, ltxt in [
-        (0.011, 330, "alpha"),
-        (0.38,  330, "alpha+P"),
-        (1.55,  330, "P+Fe3C"),
-        (0.22,  780, "gamma+alpha"),
-        (1.82,  900, "gamma+Fe3C"),
-        (0.55, 1080, "gamma"),
-        (1.10, 1400, "Liquid"),
-        (0.06, 1520, "delta"),
+        (0.011, 200, "α"),
+        (0.38,  200, "α + P"),
+        (1.55,  200, "P + Fe₃C"),
+        (0.22,  790, "γ + α"),
+        (1.85,  900, "γ + Fe₃C"),
+        (0.55, 1060, "γ"),
+        (1.10, 1380, "Liquid"),
+        (0.06, 1520, "δ + L"),
     ]:
-        fig.add_annotation(x=lx, y=ly, text=ltxt, showarrow=False,
-                           font=dict(size=10, color="rgba(200,225,255,0.55)"),
-                           bgcolor="rgba(0,0,0,0)", xref="x", yref="y")
+        fig.add_annotation(
+            x=lx, y=ly, text=f"<b>{ltxt}</b>",
+            showarrow=False,
+            font=dict(size=11, color="rgba(230,240,255,0.82)"),
+            bgcolor="rgba(0,0,0,0)", xref="x", yref="y")
 
     fig.update_layout(
         **_BASE,
-        title=dict(text=f"<b>Fe-C Equilibrium Phase Diagram</b>  |  Op. Phase: {op_phase}",
-                   font=dict(size=13), x=0.5, xanchor="center"),
-        xaxis=dict(title="Carbon Content (wt%)", range=[0, MAX_C],
-                   gridcolor="rgba(180,210,255,0.06)", zeroline=False,
-                   tickfont=dict(size=10)),
-        yaxis=dict(title="Temperature (C)", range=[0, 1650],
-                   gridcolor="rgba(180,210,255,0.06)", zeroline=False,
-                   tickfont=dict(size=10)),
-        legend=dict(bgcolor="rgba(4,7,18,0.82)", bordercolor="rgba(0,150,255,0.25)",
-                    borderwidth=1, font=dict(size=9), x=0.01, y=0.99),
-        height=610, margin=dict(l=58, r=110, t=55, b=52),
+        title=dict(
+            text=(f"<b>Fe-C Phase Diagram</b>  ·  "
+                  f"Current phase: <span style='color:{op_color}'>{op_phase}</span>"),
+            font=dict(size=13), x=0.5, xanchor="center"),
+        xaxis=dict(
+            title="Carbon Content (wt%)",
+            range=[0, MAX_C],
+            gridcolor="rgba(180,210,255,0.05)",
+            zeroline=False,
+            tickfont=dict(size=10),
+            tickformat=".2f"),
+        yaxis=dict(
+            title="Temperature (°C)",
+            range=[0, 1650],
+            gridcolor="rgba(180,210,255,0.05)",
+            zeroline=False,
+            tickfont=dict(size=10)),
+        legend=dict(
+            orientation="h",
+            x=0.5, y=-0.16,
+            xanchor="center", yanchor="top",
+            bgcolor="rgba(4,10,24,0.88)",
+            bordercolor="rgba(61,184,255,0.22)",
+            borderwidth=1,
+            font=dict(size=9, color="#c0d8f0"),
+            itemwidth=30,
+        ),
+        height=680,
+        margin=dict(l=62, r=62, t=58, b=150),
     )
     return fig
 
@@ -1234,13 +1470,21 @@ st.markdown(
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown(
-        '<div style="text-align:center;padding:8px 0 14px;">'
+        '<div style="text-align:center;padding:6px 0 10px;">'
         '<span style="font-family:\'Rajdhani\',sans-serif;font-size:1.22rem;'
-        'font-weight:700;color:#0099ff;letter-spacing:0.07em;">INPUT PARAMETERS</span>'
+        'font-weight:700;background:linear-gradient(90deg,#ff7b2e,#3db8ff);'
+        '-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
+        'letter-spacing:0.10em;">INPUT PARAMETERS</span>'
         '</div>',
         unsafe_allow_html=True,
     )
 
+    # Theme toggle — session_state.miq_theme_cryo is read by CSS block at top of script
+    st.toggle("❄  Cryo visual mode",
+              key="miq_theme_cryo",
+              help="Switch between Forge (warm ember) and Cryo (cool plasma) accent themes.")
+
+    st.markdown("---")
     st.markdown("**PROCESS TYPE**")
     PROCESS_MAP = {
         "Quench & Temper": "Quench_Temper",
@@ -1378,6 +1622,14 @@ if predict_btn:
 # ══════════════════════════════════════════════════════════════════════════════
 #  WELCOME SCREEN
 # ══════════════════════════════════════════════════════════════════════════════
+st.markdown(
+    '<div class="miq-mobile-hint">'
+    '<span style="font-size:1.1rem;">☰</span>'
+    '<span>Tap the menu icon (top-left) to open Input Parameters.</span>'
+    '</div>',
+    unsafe_allow_html=True,
+)
+
 if not st.session_state.show_results:
     col_a, col_b, col_c, col_d = st.columns(4)
     for col, proc, key, color, icon, desc in [
@@ -1506,41 +1758,30 @@ else:
 
     # Tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "Gauges and Radar",
-        "Phase Diagram",
-        "T-t Profile",
-        "Input Summary",
-        "Live Simulation",
+        "⟐ Analysis",
+        "⬢ Phase Diagram",
+        "⎍ T-t Profile",
+        "≡ Input Summary",
+        "▶ Live Simulation",
     ])
 
-    # Tab 1: Gauges & Radar
+    # Tab 1: Performance Analysis (radar + metallurgical context — no duplicate gauges/tables)
     with tab1:
-        st.markdown(html_section_header("Property Gauges", "", "📊"), unsafe_allow_html=True)
-        st.plotly_chart(build_gauges(preds), width='stretch')
-        st.markdown("---")
-        c_r, c_s = st.columns([1, 1])
+        c_r, c_s = st.columns([1.15, 1])
         with c_r:
             st.markdown(html_section_header("Performance Radar",
                                              "Normalised 0-100% relative to property range", "🕸"),
                         unsafe_allow_html=True)
             st.plotly_chart(build_radar(preds), width='stretch')
         with c_s:
-            st.markdown(html_section_header("Numerical Results", "", "📋"), unsafe_allow_html=True)
-            rows = []
-            for tgt in TARGETS:
-                label, unit, icon, _ = TARGET_LABELS[tgt]
-                rows.append({"Property": f"{icon}  {label}",
-                              "Value": f"{preds[tgt]:.1f}", "Unit": unit})
-            st.dataframe(pd.DataFrame(rows).set_index("Property"), width='stretch')
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown(html_section_header("Metallurgical Context", "", "⚗️"),
+            st.markdown(html_section_header("Metallurgical Context",
+                                             "Derived physical-metallurgy quantities", "⚗️"),
                         unsafe_allow_html=True)
             meta_rows = [
                 ("Carbon Equiv (IIW)",  f"{CE_s:.4f}",          "wt%"),
-                ("A3 Temperature",      f"{A3v_s:.0f}",          "C"),
-                ("Delta T above A3",    f"{ht_s - A3v_s:+.0f}", "C"),
-                ("Phase at HT temp",    phase_at_ht,              ""),
+                ("A3 Temperature",      f"{A3v_s:.0f}",         "°C"),
+                ("Δ T above A3",        f"{ht_s - A3v_s:+.0f}", "°C"),
+                ("Phase at HT temp",    phase_at_ht,            ""),
             ]
             if tt_s > 0:
                 HJ = calc_hollomon_jaffe(tt_s, ttime_s)
@@ -1549,6 +1790,9 @@ else:
                 pd.DataFrame(meta_rows, columns=["Quantity","Value","Unit"]).set_index("Quantity"),
                 width='stretch',
             )
+            st.caption("Property values shown in cards above — this tab focuses on how the "
+                       "predicted profile compares to the dataset average and the underlying "
+                       "metallurgical state.")
 
     # Tab 2: Enhanced Phase Diagram
     with tab2:
