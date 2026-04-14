@@ -1239,13 +1239,13 @@ def _compute_voronoi_grains(n_grains, seed=42):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @st.cache_data(show_spinner=False)
-def build_combined_animation(process_key, C, ht_temp, soak_time, cool_medium,
-                              t_temp, t_time):
+def build_immersive_simulation_html(process_key, C, ht_temp, soak_time, cool_medium,
+                                     t_temp, t_time):
+    """Canvas-based immersive simulation: phase diagram + microstructure evolution."""
     from PIL import Image as PILImage
     from io import BytesIO
     from scipy.spatial import cKDTree
 
-    # Physical setup
     A1    = 723.0
     Ms    = max(80.0, 539 - 423*C - 30.4*0.85 - 12.1*1.05 - 7.5*0.2)
     COOL  = {"Water":3.0,"Polymer":2.2,"Oil":1.8,"Salt Bath":1.1,"Air":0.4,"Furnace":0.08}
@@ -1254,7 +1254,6 @@ def build_combined_animation(process_key, C, ht_temp, soak_time, cool_medium,
     n_ini = 100
     n_soak= max(16, int(n_ini / (1.0 + 7.0 * K_gg)))
 
-    # Phase colour palette (linear 0-1 RGB)
     PC = {
         "ferrite":             np.array([0.31, 0.78, 0.47]),
         "pearlite":            np.array([0.52, 0.35, 0.20]),
@@ -1265,27 +1264,34 @@ def build_combined_animation(process_key, C, ht_temp, soak_time, cool_medium,
         "fine_pearlite":       np.array([0.58, 0.38, 0.18]),
         "coarse_pearlite":     np.array([0.72, 0.52, 0.28]),
     }
+    PCLABELS = {
+        "ferrite":"Ferrite", "pearlite":"Pearlite", "austenite":"Austenite",
+        "martensite":"Martensite", "tempered_martensite":"Tempered Mart.",
+        "bainite":"Bainite", "fine_pearlite":"Fine Pearlite", "coarse_pearlite":"Coarse Pearlite",
+    }
+    PCCOLORS = {
+        "ferrite":"#50c878", "pearlite":"#855930", "austenite":"#f0d600",
+        "martensite":"#1a238c", "tempered_martensite":"#406be6",
+        "bainite":"#6c38a6", "fine_pearlite":"#946020", "coarse_pearlite":"#b88548",
+    }
 
-    # Pre-compute grain structures
     seed0 = (int(abs(C * 100)) + int(ht_temp)) % 9973
     GS = {
-        "initial": _compute_voronoi_grains(n_ini,     seed=seed0),
-        "soaked":  _compute_voronoi_grains(n_soak,    seed=seed0+1),
+        "initial": _compute_voronoi_grains(n_ini, seed=seed0),
+        "soaked":  _compute_voronoi_grains(n_soak, seed=seed0+1),
         "recryst": _compute_voronoi_grains(n_soak+28, seed=seed0+2),
     }
     rng0 = np.random.default_rng(seed0)
     ORI  = {k: rng0.random(len(v[1])) for k, v in GS.items()}
 
-    # Pre-rasterize grain index maps using cKDTree
-    IMG  = 140
+    IMG  = 160
     gx, gy = np.meshgrid(np.linspace(0, 1, IMG), np.linspace(0, 1, IMG))
     pixels = np.column_stack([gx.ravel(), gy.ravel()])
     GIDX = {}
     for k, (pts, _) in GS.items():
-        _, idx  = cKDTree(pts).query(pixels)
+        _, idx = cKDTree(pts).query(pixels)
         GIDX[k] = idx.clip(0, len(pts)-1)
 
-    # T-t profile
     def T_at(f):
         if process_key == "Quench_Temper":
             if f < 0.18: return 25 + (ht_temp-25)*f/0.18
@@ -1318,11 +1324,11 @@ def build_combined_animation(process_key, C, ht_temp, soak_time, cool_medium,
         elif process_key == "Normalizing":
             if f < 0.22: return "Heating"
             if f < 0.42: return "Austenitizing"
-            return "Air Cooling + Recrystallization"
+            return "Air Cooling"
         elif process_key == "Annealing":
             if f < 0.20: return "Heating"
             if f < 0.45: return "Austenitizing"
-            return "Furnace Cooling + Recrystallization"
+            return "Furnace Cooling"
         else:
             if f < 0.22: return "Heating"
             if f < 0.68: return "Soaking (Sub-A1)"
@@ -1356,8 +1362,8 @@ def build_combined_animation(process_key, C, ht_temp, soak_time, cool_medium,
                 return gs,[("austenite",1.0)],20,0.0
             prog = min(1.0,(f-0.42)/0.58)
             X_rx = 1-np.exp(-2.0*prog**2.0)
-            gs   = "recryst" if X_rx>0.45 else "soaked"
-            fp   = min(0.65,prog*0.65); fe=min(0.35,prog*0.35)
+            gs = "recryst" if X_rx>0.45 else "soaked"
+            fp = min(0.65,prog*0.65); fe=min(0.35,prog*0.35)
             return gs,[("fine_pearlite",fp),("ferrite",fe),("austenite",max(0,1-fp-fe))],50,0.0
         elif process_key == "Annealing":
             if f < 0.20:
@@ -1368,8 +1374,8 @@ def build_combined_animation(process_key, C, ht_temp, soak_time, cool_medium,
                 return gs,[("austenite",1.0)],20,0.0
             prog = min(1.0,(f-0.45)/0.55)
             X_rx = 1-np.exp(-1.5*prog**1.8)
-            gs   = "recryst" if X_rx>0.40 else "soaked"
-            cp   = min(0.68,prog*0.68); fe=min(0.30,prog*0.30)
+            gs = "recryst" if X_rx>0.40 else "soaked"
+            cp = min(0.68,prog*0.68); fe=min(0.30,prog*0.30)
             return gs,[("coarse_pearlite",cp),("ferrite",fe),("austenite",max(0,1-cp-fe))],60,0.0
         else:
             return "initial",[("ferrite",0.55),("pearlite",0.45)],70,0.0
@@ -1390,13 +1396,11 @@ def build_combined_animation(process_key, C, ht_temp, soak_time, cool_medium,
             g_rgb[i] = np.clip(PC.get(lbl, PC["ferrite"]) * b, 0, 1)
         gidx   = GIDX[gs_key]
         px_rgb = g_rgb[gidx].reshape(IMG, IMG, 3)
-        # Grain boundaries
         gmap = gidx.reshape(IMG, IMG)
         bnd  = np.zeros((IMG, IMG), dtype=bool)
         bnd[:-1]   |= (gmap[:-1]   != gmap[1:])
         bnd[:, :-1] |= (gmap[:, :-1] != gmap[:, 1:])
         px_rgb[bnd] *= 0.14
-        # Martensite needles
         if needle_frac > 0.1:
             rng_n = np.random.default_rng(seed0 + int(needle_frac * 300))
             for _ in range(int(55 * needle_frac)):
@@ -1416,232 +1420,200 @@ def build_combined_animation(process_key, C, ht_temp, soak_time, cool_medium,
         pil.save(buf, format='PNG', optimize=True)
         return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
-    # Build static phase diagram portion of the figure
-    A1_=723; A3_FE=912; PERIT=1495; MELT=1538; EUTE=1147
-    C_EUT=0.76; C_AUS=2.11; MAX_C=2.3; C_PER=0.17
-
-    def _a3(c):  return A3_FE - (A3_FE-A1_)/C_EUT * min(c, C_EUT)
-    def _acm(c): return A1_ + (EUTE-A1_)/(C_AUS-C_EUT) * (c-C_EUT)
-
-    fig = go.Figure()
-
-    # Phase regions
-    for xs, ys, fill, lbl in [
-        ([0, 0.022, 0.022, 0],          [0,0,A1_,A1_],                    "rgba(80,200,120,0.20)", "Ferrite"),
-        ([0.022,C_EUT,C_EUT,0.022],     [0,0,A1_,A1_],                    "rgba(86,180,211,0.20)", "Ferrite+Pearlite"),
-        ([C_EUT,MAX_C,MAX_C,C_EUT],     [0,0,A1_,A1_],                    "rgba(176,122,214,0.20)", "Pearlite+Fe3C"),
-        ([0,C_EUT,0],                   [A3_FE,A1_,A1_],                   "rgba(255,140,48,0.20)", "gamma+alpha"),
-        ([C_EUT,MAX_C,MAX_C,C_AUS],     [A1_,A1_,EUTE,EUTE],              "rgba(255,92,106,0.20)", "gamma+Fe3C"),
-        ([0,C_PER,C_AUS,C_EUT,0],       [MELT,PERIT,EUTE,A1_,A3_FE],     "rgba(255,215,0,0.12)", "Austenite"),
-        ([0,MAX_C,MAX_C,C_AUS,C_PER,0], [MELT,EUTE,1620,1620,PERIT,MELT], "rgba(240,230,140,0.11)", "Liquid"),
-        ([0,C_PER,C_PER,0],             [MELT,PERIT,1570,1570],            "rgba(180,225,255,0.20)", "delta-Ferrite"),
-    ]:
-        fig.add_trace(go.Scatter(
-            x=xs, y=ys, fill="toself", fillcolor=fill,
-            line=dict(width=0.5, color="rgba(255,255,255,0.10)"),
-            mode="lines",
-            hovertemplate=f"<b>{lbl}</b><br>C=%{{x:.3f}}%  T=%{{y:.0f}}C<extra></extra>",
-            showlegend=False,
-        ))
-
-    # A3, Acm, A1 lines
-    a3_arr = np.linspace(0, C_EUT, 120)
-    fig.add_trace(go.Scatter(x=a3_arr, y=[_a3(c) for c in a3_arr],
-        line=dict(color="#f0a030", width=1.8), mode="lines", name="A3",
-        hovertemplate="A3=%{y:.0f}C<extra></extra>"))
-    acm_arr = np.linspace(C_EUT, MAX_C, 120)
-    fig.add_trace(go.Scatter(x=acm_arr, y=[_acm(c) for c in acm_arr],
-        line=dict(color="#e05050", width=1.8), mode="lines", name="Acm",
-        hovertemplate="Acm=%{y:.0f}C<extra></extra>"))
-    fig.add_trace(go.Scatter(x=[0,MAX_C], y=[A1_,A1_],
-        line=dict(color="#80aaee", width=1.4, dash="dot"),
-        mode="lines", name="A1=723C"))
-
-    # Ms line
-    Ms_approx = max(80.0, 539 - 423*C)
-    fig.add_trace(go.Scatter(x=[0,MAX_C], y=[Ms_approx,Ms_approx],
-        line=dict(color="rgba(130,110,255,0.55)", width=1.2, dash="dashdot"),
-        mode="lines+text",
-        text=["", f"Ms={Ms_approx:.0f}C"],
-        textposition="middle right", textfont=dict(size=8, color="#9090ff"),
-        name="Ms", showlegend=False))
-
-    # Marker points
-    fig.add_trace(go.Scatter(x=[C_EUT], y=[A1_], mode="markers",
-        marker=dict(size=8,color="#ffd700",symbol="diamond",line=dict(color="white",width=1.5)),
-        name="Eutectoid S", showlegend=False))
-    fig.add_trace(go.Scatter(x=[C_PER], y=[PERIT], mode="markers",
-        marker=dict(size=8,color="#60c4ff",symbol="triangle-up",line=dict(color="white",width=1.5)),
-        name="Peritectic P", showlegend=False))
-
-    # Process + carbon lines (as scatter, safe with domain)
-    fig.add_trace(go.Scatter(x=[0,MAX_C], y=[ht_temp,ht_temp],
-        line=dict(color="#00b4ff", width=1.5, dash="dashdot"),
-        mode="lines+text", text=["", f"{ht_temp:.0f}C"],
-        textposition="middle right", textfont=dict(size=8, color="#00b4ff"),
-        name="Austenitize", showlegend=False))
-    if t_temp > 0:
-        fig.add_trace(go.Scatter(x=[0,MAX_C], y=[t_temp,t_temp],
-            line=dict(color="#f0a030", width=1.2, dash="dashdot"),
-            mode="lines+text", text=["", f"{t_temp:.0f}C"],
-            textposition="middle right", textfont=dict(size=8, color="#f0a030"),
-            name="Temper", showlegend=False))
-    fig.add_trace(go.Scatter(x=[C,C], y=[0,1620],
-        line=dict(color="rgba(80,227,194,0.55)", width=1.4, dash="dot"),
-        mode="lines+text", text=[f"C={C:.2f}%", ""],
-        textposition="top right", textfont=dict(size=8, color="#50e3c2"),
-        name="C content", showlegend=False))
-
-    # Full T-t trajectory (faint path at x=C)
-    N_PATH   = 80
-    path_f   = np.linspace(0, 1, N_PATH)
-    path_T   = [T_at(f_) for f_ in path_f]
-    fig.add_trace(go.Scatter(
-        x=[C]*N_PATH, y=path_T, mode="lines",
-        line=dict(color="rgba(255,107,53,0.28)", width=2.0),
-        name="HT path", showlegend=False, hoverinfo="skip"))
-
-    # Animated operating point (initial position at frame 0)
-    T_init = T_at(0)
-    fig.add_trace(go.Scatter(
-        x=[C], y=[T_init], mode="markers",
-        marker=dict(size=14, color="#ff6b35", symbol="circle",
-                    line=dict(color="white", width=2.2)),
-        name="Operating point",
-        hovertemplate="T=%{y:.0f}C<extra></extra>"))
-    N_ANIM = len(fig.data) - 1   # index of the only animated trace
-
-    # Phase region labels (use add_annotation — won't be overwritten by frames)
-    for lx, ly, ltxt in [
-        (0.011,310,"a"),(0.38,310,"a+P"),(1.55,310,"P+Fe3C"),
-        (0.22,780,"g+a"),(1.82,900,"g+Fe3C"),(0.55,1075,"g"),
-        (1.05,1390,"L"),(0.05,1510,"d"),
-    ]:
-        fig.add_annotation(x=lx, y=ly, text=ltxt, showarrow=False,
-                           font=dict(size=9,color="rgba(200,220,255,0.52)"),
-                           bgcolor="rgba(0,0,0,0)", xref="x", yref="y")
-
-    # Panel title annotations (paper coords — won't be overwritten by frames)
-    fig.add_annotation(x=0.235, y=1.03, xref="paper", yref="paper",
-                       text="<b>Fe-C Phase Diagram</b>",
-                       font=dict(size=12, color="#b0cef0"),
-                       showarrow=False, xanchor="center")
-    fig.add_annotation(x=0.765, y=1.03, xref="paper", yref="paper",
-                       text="<b>Microstructure Evolution</b>",
-                       font=dict(size=12, color="#b0cef0"),
-                       showarrow=False, xanchor="center")
-
-    # Vertical divider
-    fig.add_shape(type="line",
-                  x0=0.49, y0=0.03, x1=0.49, y1=1.00,
-                  xref="paper", yref="paper",
-                  line=dict(color="rgba(0,150,255,0.18)", width=1))
-
-    # Restrict x/y axes to left 47% of figure
-    fig.update_layout(
-        xaxis=dict(domain=[0.0, 0.46], title="Carbon Content (wt%)", range=[0, MAX_C],
-                   gridcolor="rgba(180,210,255,0.06)", zeroline=False,
-                   tickfont=dict(size=9)),
-        yaxis=dict(domain=[0.10, 0.97], title="Temperature (C)", range=[0, 1640],
-                   gridcolor="rgba(180,210,255,0.06)", zeroline=False,
-                   tickfont=dict(size=9)),
-    )
-
-    # Generate frames
+    # Build frame data
     N_FRAMES = 32
-    fracs    = np.linspace(0, 1, N_FRAMES)
-    frames   = []
-
-    # Build frame-0 image for the initial layout display
-    gs0, pf0, so0, nf0 = frame_state(fracs[0])
-    arr0     = make_micro_array(gs0, pf0, so0, nf0)
-    img0_src = arr_to_b64(arr0)
-
+    fracs = np.linspace(0, 1, N_FRAMES)
+    frames_json = []
     for fi, f in enumerate(fracs):
-        T     = T_at(f)
+        T = T_at(f)
         stage = sname(f)
         gs_key, phase_fracs, seed_off, needle_frac = frame_state(f)
-        arr     = make_micro_array(gs_key, phase_fracs, seed_off, needle_frac)
+        arr = make_micro_array(gs_key, phase_fracs, seed_off, needle_frac)
         img_src = arr_to_b64(arr)
-        dom_phase = phase_fracs[0][0].replace("_", " ").title()
-        n_vis     = sum(1 for p in GS[gs_key][1] if p is not None)
-        frame = go.Frame(
-            data=[go.Scatter(x=[C], y=[T])],
-            traces=[N_ANIM],
-            layout=go.Layout(
-                title=dict(text=(
-                    f"<b>{stage}</b>  |  T = {T:.0f} C  |  "
-                    f"{dom_phase}  |  ~{n_vis} grains"
-                )),
-                images=[dict(
-                    source=img_src,
-                    xref="paper", yref="paper",
-                    x=0.535, y=0.97,
-                    sizex=0.45, sizey=0.87,
-                    sizing="stretch", layer="above",
-                )],
-            ),
-            name=str(fi),
-        )
-        frames.append(frame)
+        n_vis = sum(1 for p in GS[gs_key][1] if p is not None)
+        phases = []
+        for lbl, frac in phase_fracs:
+            if frac > 0.01:
+                phases.append({"n": PCLABELS.get(lbl, lbl), "f": round(frac, 3),
+                               "c": PCCOLORS.get(lbl, "#888")})
+        frames_json.append({
+            "T": round(T, 1), "s": stage, "img": img_src,
+            "g": n_vis, "ph": phases,
+        })
 
-    fig.frames = frames
+    # Build T-t path for the mini chart
+    path_pts = [{"f": round(f, 4), "T": round(T_at(f), 1)} for f in np.linspace(0, 1, 80)]
 
-    # Animation controls
-    fig.update_layout(
-        updatemenus=[dict(
-            type="buttons", showactive=False,
-            x=0.53, y=-0.04, xanchor="left", yanchor="top",
-            bgcolor="rgba(6,12,32,0.92)",
-            bordercolor="rgba(0,150,255,0.30)",
-            font=dict(color="#b0cef0", size=12),
-            buttons=[
-                dict(label="Play",
-                     method="animate",
-                     args=[None, dict(frame=dict(duration=110, redraw=True),
-                                      fromcurrent=True, mode="immediate")]),
-                dict(label="Pause",
-                     method="animate",
-                     args=[[None], dict(frame=dict(duration=0, redraw=False),
-                                        mode="immediate")]),
-            ],
-        )],
-        sliders=[dict(
-            active=0, x=0.0, y=-0.06, len=1.0,
-            currentvalue=dict(visible=False),
-            bgcolor="rgba(6,12,32,0.80)",
-            bordercolor="rgba(0,150,255,0.18)",
-            tickcolor="rgba(0,150,255,0.35)",
-            steps=[dict(
-                args=[[str(i)], dict(frame=dict(duration=80, redraw=True),
-                                      mode="immediate")],
-                method="animate", label="",
-            ) for i in range(N_FRAMES)],
-            pad=dict(t=12, b=8),
-        )],
-    )
+    cfg = json_lib.dumps({
+        "C": round(C, 4), "htT": round(ht_temp, 1), "tT": round(t_temp, 1),
+        "Ms": round(Ms, 1), "proc": process_key, "cool": cool_medium,
+        "frames": frames_json, "path": path_pts,
+    })
+    return _SIM_HTML.replace("__CFG__", cfg)
 
-    # Final layout settings
-    fig.update_layout(
-        **_BASE,
-        title=dict(
-            text=(f"<b>Heating</b>  |  T = {T_at(0):.0f} C  |  "
-                  f"Ferrite + Pearlite  |  ~{n_ini} grains"),
-            font=dict(size=12), x=0.50, xanchor="center", y=0.985,
-        ),
-        images=[dict(
-            source=img0_src,
-            xref="paper", yref="paper",
-            x=0.535, y=0.97, sizex=0.45, sizey=0.87,
-            sizing="stretch", layer="above",
-        )],
-        legend=dict(bgcolor="rgba(4,7,18,0.82)", bordercolor="rgba(0,150,255,0.20)",
-                    borderwidth=1, font=dict(size=8),
-                    x=0.01, y=0.99, xanchor="left", yanchor="top"),
-        height=590,
-        margin=dict(l=50, r=20, t=50, b=88),
-    )
-    return fig
+
+_SIM_HTML = r"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;font-family:Inter,-apple-system,sans-serif;color:#c0d0e8}
+#w{position:relative;width:100%;height:780px;display:flex;flex-direction:column}
+#top{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;
+background:rgba(6,10,22,0.90);border:1px solid rgba(160,185,220,0.12);border-radius:6px;margin-bottom:6px}
+#stage{font-weight:700;font-size:15px;color:#c9a56b;font-family:Rajdhani,sans-serif;letter-spacing:0.08em;text-transform:uppercase}
+#tval{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#e08030}
+#tunit{font-size:11px;color:rgba(170,190,220,0.5);margin-left:2px}
+#panels{display:flex;flex:1;gap:6px;min-height:0}
+.panel{flex:1;background:rgba(6,10,22,0.60);border:1px solid rgba(160,185,220,0.10);
+border-radius:6px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.ptitle{font-size:11px;font-weight:600;color:rgba(170,190,220,0.50);text-transform:uppercase;
+letter-spacing:0.12em;padding:8px 12px 4px;font-family:Rajdhani,sans-serif}
+canvas,#mimg{display:block;width:100%;flex:1;min-height:0;object-fit:contain;border-radius:0 0 5px 5px}
+#phbar{display:flex;height:18px;border-radius:3px;overflow:hidden;margin:0 10px 8px}
+.phseg{height:100%;transition:width 0.3s}
+#phleg{display:flex;gap:8px;flex-wrap:wrap;padding:0 10px 6px}
+.phl{display:flex;align-items:center;gap:3px;font-size:9px;color:rgba(170,190,220,0.50)}
+.phd{width:6px;height:6px;border-radius:50%}
+#ctrls{display:flex;align-items:center;gap:10px;padding:8px 14px;margin-top:6px;
+background:rgba(6,10,22,0.90);border:1px solid rgba(160,185,220,0.12);border-radius:6px}
+#pbtn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(201,165,107,0.5);
+background:transparent;color:#c9a56b;font-size:16px;cursor:pointer;display:flex;align-items:center;
+justify-content:center;transition:all 0.2s;flex-shrink:0}
+#pbtn:hover{background:rgba(201,165,107,0.10);border-color:#c9a56b}
+#sbar{flex:1;position:relative;height:28px;display:flex;align-items:center;cursor:pointer}
+#strack{width:100%;height:4px;background:rgba(160,185,220,0.10);border-radius:2px;position:relative}
+#sfill{height:100%;background:linear-gradient(90deg,#c9a56b,#e08030);border-radius:2px;width:0%;transition:width 0.1s}
+#sthumb{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#e4e9f2;
+border:2px solid #c9a56b;transform:translate(-50%,-50%);left:0%;transition:left 0.1s;
+box-shadow:0 0 0 3px rgba(201,165,107,0.12)}
+#ftime{font-size:11px;color:rgba(170,190,220,0.45);font-family:monospace;min-width:55px;text-align:right;flex-shrink:0}
+@media(max-width:700px){#panels{flex-direction:column}#w{height:auto;min-height:700px}
+.panel{min-height:260px}#tval{font-size:18px}#stage{font-size:12px}}
+</style></head><body>
+<div id="w">
+<div id="top"><div id="stage">Heating</div><div><span id="tval">25</span><span id="tunit">&deg;C</span></div></div>
+<div id="panels">
+<div class="panel"><div class="ptitle">Fe&ndash;C Phase Diagram</div><canvas id="pc"></canvas></div>
+<div class="panel"><div class="ptitle">Microstructure (EBSD)</div><img id="mimg" src="" alt="micro">
+<div id="phbar"></div><div id="phleg"></div></div>
+</div>
+<div id="ctrls">
+<button id="pbtn">&#9654;</button>
+<div id="sbar"><div id="strack"><div id="sfill"></div><div id="sthumb"></div></div></div>
+<div id="ftime">1 / 32</div>
+</div>
+</div>
+<script>
+var D=__CFG__;
+var F=D.frames,NF=F.length,ci=0,playing=false,timer=null;
+var A1=723,A3F=912,PER=1495,MLT=1538,EUT=1147,CE=0.76,CA=2.11,MXC=2.3,MXT=1650,CP=0.17;
+function a3(c){return A3F-(A3F-A1)/CE*Math.min(c,CE)}
+function acm(c){return A1+(EUT-A1)/(CA-CE)*(c-CE)}
+function lq(c){return c<=CP?MLT-(MLT-PER)/CP*c:c<=CA?PER+(EUT-PER)/(CA-CP)*(c-CP):EUT}
+var cv=document.getElementById('pc'),cx=cv.getContext('2d');
+var mimg=document.getElementById('mimg');
+var stageEl=document.getElementById('stage'),tvalEl=document.getElementById('tval');
+var phbar=document.getElementById('phbar'),phleg=document.getElementById('phleg');
+var pbtn=document.getElementById('pbtn'),sfill=document.getElementById('sfill');
+var sthumb=document.getElementById('sthumb'),ftime=document.getElementById('ftime');
+var sbar=document.getElementById('sbar');
+function rsz(){
+var p=cv.parentElement;var r=p.getBoundingClientRect();
+var w=r.width,h=r.height-30;
+var d=window.devicePixelRatio||1;
+cv.width=w*d;cv.height=h*d;cv.style.width=w+'px';cv.style.height=h+'px';
+cx.setTransform(d,0,0,d,0,0);drawPhase()}
+rsz();window.addEventListener('resize',rsz);
+function drawPhase(){
+var W=cv.width/(window.devicePixelRatio||1),H=cv.height/(window.devicePixelRatio||1);
+var ML=44,MR=28,MT=10,MB=32,PW=W-ML-MR,PH=H-MT-MB;
+function cX(c){return ML+c/MXC*PW}function tYf(T){return MT+(1-T/MXT)*PH}
+cx.clearRect(0,0,W,H);
+var bg=cx.createLinearGradient(ML,H-MB,ML,MT);
+bg.addColorStop(0,'#04060e');bg.addColorStop(0.2,'#080c18');bg.addColorStop(0.4,'#140a08');
+bg.addColorStop(0.6,'#2a1006');bg.addColorStop(0.75,'#4a1a04');bg.addColorStop(0.9,'#803810');bg.addColorStop(1,'#c06020');
+cx.fillStyle=bg;cx.fillRect(ML,MT,PW,PH);
+cx.save();cx.beginPath();cx.rect(ML,MT,PW,PH);cx.clip();
+var N=40,i;
+cx.fillStyle='rgba(80,200,120,0.06)';cx.beginPath();
+cx.moveTo(cX(0),tYf(0));cx.lineTo(cX(0.022),tYf(0));cx.lineTo(cX(0.022),tYf(A1));cx.lineTo(cX(0),tYf(A1));cx.fill();
+cx.fillStyle='rgba(74,168,192,0.07)';cx.beginPath();
+cx.moveTo(cX(0.022),tYf(0));cx.lineTo(cX(CE),tYf(0));cx.lineTo(cX(CE),tYf(A1));cx.lineTo(cX(0.022),tYf(A1));cx.fill();
+cx.fillStyle='rgba(154,104,196,0.07)';cx.beginPath();
+cx.moveTo(cX(CE),tYf(0));cx.lineTo(cX(MXC),tYf(0));cx.lineTo(cX(MXC),tYf(A1));cx.lineTo(cX(CE),tYf(A1));cx.fill();
+var tg=cx.createLinearGradient(0,tYf(A3F),0,tYf(A1));
+tg.addColorStop(0,'rgba(232,144,48,0.03)');tg.addColorStop(1,'rgba(232,144,48,0.12)');
+cx.fillStyle=tg;cx.beginPath();cx.moveTo(cX(0),tYf(A3F));
+for(i=0;i<=N;i++){var c=CE*i/N;cx.lineTo(cX(c),tYf(a3(c)))}cx.lineTo(cX(CE),tYf(A1));cx.lineTo(cX(0),tYf(A1));cx.fill();
+cx.fillStyle='rgba(240,200,48,0.06)';cx.beginPath();cx.moveTo(cX(0),tYf(MLT));cx.lineTo(cX(CP),tYf(PER));
+for(i=0;i<=N;i++){c=CE+(CA-CE)*i/N;cx.lineTo(cX(c),tYf(acm(c)))}
+cx.lineTo(cX(CE),tYf(A1));for(i=N;i>=0;i--){c=CE*i/N;cx.lineTo(cX(c),tYf(a3(c)))}cx.fill();
+cx.fillStyle='rgba(255,238,160,0.06)';cx.beginPath();cx.moveTo(cX(0),tYf(MXT));cx.lineTo(cX(MXC),tYf(MXT));
+for(i=N;i>=0;i--){c=MXC*i/N;cx.lineTo(cX(c),tYf(lq(c)))}cx.fill();
+cx.strokeStyle='#d0952a';cx.lineWidth=1.4;cx.shadowColor='#d0952a';cx.shadowBlur=3;
+cx.beginPath();for(i=0;i<=60;i++){c=CE*i/60;cx[i?'lineTo':'moveTo'](cX(c),tYf(a3(c)))}cx.stroke();
+cx.strokeStyle='#c04848';cx.shadowColor='#c04848';
+cx.beginPath();for(i=0;i<=60;i++){c=CE+(CA-CE)*i/60;cx[i?'lineTo':'moveTo'](cX(c),tYf(acm(c)))}cx.stroke();
+cx.shadowBlur=0;cx.strokeStyle='rgba(128,170,238,0.45)';cx.lineWidth=1;cx.setLineDash([5,3]);
+cx.beginPath();cx.moveTo(cX(0),tYf(A1));cx.lineTo(cX(MXC),tYf(A1));cx.stroke();cx.setLineDash([]);
+cx.strokeStyle='rgba(255,240,160,0.50)';cx.lineWidth=1.4;
+cx.beginPath();for(i=0;i<=60;i++){c=MXC*i/60;cx[i?'lineTo':'moveTo'](cX(c),tYf(lq(c)))}cx.stroke();
+cx.strokeStyle='rgba(80,227,194,0.30)';cx.lineWidth=1;cx.setLineDash([3,3]);
+cx.beginPath();cx.moveTo(cX(D.C),tYf(0));cx.lineTo(cX(D.C),tYf(MXT));cx.stroke();cx.setLineDash([]);
+cx.strokeStyle='rgba(255,107,53,0.22)';cx.lineWidth=1.5;
+cx.beginPath();for(i=0;i<D.path.length;i++){var pt=D.path[i];cx[i?'lineTo':'moveTo'](cX(D.C),tYf(pt.T))}cx.stroke();
+var T=F[ci].T,ox=cX(D.C),oy=tYf(T);
+cx.fillStyle='rgba(255,107,53,0.12)';cx.beginPath();cx.arc(ox,oy,16,0,6.28);cx.fill();
+cx.fillStyle='rgba(255,107,53,0.25)';cx.beginPath();cx.arc(ox,oy,9,0,6.28);cx.fill();
+cx.fillStyle='#ff6b35';cx.shadowColor='#ff6b35';cx.shadowBlur=8;cx.beginPath();cx.arc(ox,oy,4.5,0,6.28);cx.fill();
+cx.strokeStyle='rgba(255,255,255,0.80)';cx.lineWidth=1.5;cx.shadowBlur=0;cx.beginPath();cx.arc(ox,oy,4.5,0,6.28);cx.stroke();
+cx.restore();
+cx.strokeStyle='rgba(160,185,220,0.10)';cx.lineWidth=0.5;
+for(T=0;T<=MXT;T+=400){cx.beginPath();cx.moveTo(ML,tYf(T));cx.lineTo(ML+PW,tYf(T));cx.stroke()}
+cx.fillStyle='rgba(160,185,220,0.42)';cx.font='9px monospace';cx.textAlign='right';
+for(T=0;T<=MXT;T+=400)cx.fillText(T+'\u00b0',ML-4,tYf(T)+3);
+cx.textAlign='center';cx.fillText('wt% C',ML+PW/2,H-4);
+for(c=0;c<=MXC;c+=0.5)cx.fillText(c.toFixed(1),cX(c),H-MB+14);
+cx.fillStyle='rgba(200,220,245,0.28)';cx.font='bold 9px sans-serif';cx.textAlign='center';
+var lbs=[[0.38,280,'\u03b1+P'],[0.50,1020,'\u03b3'],[1.1,1400,'L']];
+for(i=0;i<lbs.length;i++)cx.fillText(lbs[i][2],cX(lbs[i][0]),tYf(lbs[i][1]));
+cx.strokeStyle='rgba(160,185,220,0.10)';cx.lineWidth=1;cx.strokeRect(ML,MT,PW,PH)}
+function setFrame(idx){
+ci=Math.max(0,Math.min(NF-1,idx));var f=F[ci];
+stageEl.textContent=f.s;tvalEl.textContent=Math.round(f.T);
+mimg.src=f.img;
+var pct=ci/(NF-1)*100;sfill.style.width=pct+'%';sthumb.style.left=pct+'%';
+ftime.textContent=(ci+1)+' / '+NF;
+phbar.innerHTML='';phleg.innerHTML='';
+for(var j=0;j<f.ph.length;j++){var p=f.ph[j];
+var seg=document.createElement('div');seg.className='phseg';
+seg.style.width=(p.f*100)+'%';seg.style.background=p.c;phbar.appendChild(seg);
+var lg=document.createElement('div');lg.className='phl';
+lg.innerHTML='<div class="phd" style="background:'+p.c+'"></div>'+p.n+' '+(p.f*100).toFixed(0)+'%';
+phleg.appendChild(lg)}
+drawPhase()}
+function togglePlay(){
+if(playing){playing=false;clearInterval(timer);pbtn.innerHTML='&#9654;'}
+else{playing=true;pbtn.innerHTML='&#10074;&#10074;';
+timer=setInterval(function(){if(ci>=NF-1){ci=0}else{ci++}setFrame(ci)},140)}}
+pbtn.addEventListener('click',togglePlay);
+var dragging=false;
+function scrub(e){
+var r=sbar.getBoundingClientRect();var x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+setFrame(Math.round(x*(NF-1)))}
+sbar.addEventListener('mousedown',function(e){dragging=true;scrub(e)});
+window.addEventListener('mousemove',function(e){if(dragging)scrub(e)});
+window.addEventListener('mouseup',function(){dragging=false});
+sbar.addEventListener('touchstart',function(e){e.preventDefault();var t=e.touches[0];
+var r=sbar.getBoundingClientRect();var x=Math.max(0,Math.min(1,(t.clientX-r.left)/r.width));
+setFrame(Math.round(x*(NF-1)))},{passive:false});
+sbar.addEventListener('touchmove',function(e){e.preventDefault();var t=e.touches[0];
+var r=sbar.getBoundingClientRect();var x=Math.max(0,Math.min(1,(t.clientX-r.left)/r.width));
+setFrame(Math.round(x*(NF-1)))},{passive:false});
+var imgs=[];var loaded=0;
+for(var k=0;k<NF;k++){var im=new Image();im.src=F[k].img;im.onload=function(){loaded++};imgs.push(im)}
+setFrame(0);
+</script></body></html>"""
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2033,9 +2005,9 @@ else:
     with tab5:
         st.markdown(
             html_section_header(
-                "Phase Diagram and Microstructure Simulation",
-                "Interactive animation: Fe-C operating path + EBSD-style grain evolution side by side.",
-                "🎬",
+                "Phase Diagram & Microstructure Simulation",
+                "Interactive animation: Fe-C operating path + EBSD-style grain evolution.",
+                "\U0001f3ac",
             ),
             unsafe_allow_html=True,
         )
@@ -2051,31 +2023,17 @@ else:
 
         if st.session_state.get("sim_ready"):
             sim_p = st.session_state.sim_params
-            with st.spinner("Building interactive simulation — this may take up to 20 s..."):
-                anim_fig = build_combined_animation(*sim_p)
-            st.plotly_chart(anim_fig, width='stretch')
+            with st.spinner("Building immersive simulation \u2014 this may take up to 20 s..."):
+                sim_html = build_immersive_simulation_html(*sim_p)
+            components.html(sim_html, height=800, scrolling=False)
 
-            st.markdown(
-                '<div style="background:rgba(4,7,18,0.75);border:1px solid rgba(0,150,255,0.20);'
-                'border-radius:10px;padding:10px 16px;margin-top:8px;font-size:0.79rem;'
-                'color:rgba(150,190,240,0.60);">'
-                'Microstructure colour key:  '
-                'Yellow = Austenite  |  Green = Ferrite  |  Brown = Pearlite  |  '
-                'Dark blue = Martensite  |  Light blue = Tempered Martensite  |  '
-                'Purple = Bainite  —  '
-                'Dark lines = grain boundaries   Bright streaks = martensite laths'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-
-            # Physics expander
             _proc, _C, _ht, _soak, _cool, _tt, _ttime = sim_p
             Ms_v = max(80.0, 539 - 423*_C - 30.4*0.85 - 12.1*1.05 - 7.5*0.2)
             K_gg = 0.9 * np.exp(-20000 / (_ht + 273.15)) * (_soak / 60.0)
             n_s  = max(16, int(100 / (1.0 + 7.0 * K_gg)))
             with st.expander("Simulation physics parameters", expanded=False):
                 phys_rows = [
-                    ("Martensite start Ms",        f"{Ms_v:.0f}",                  "C"),
+                    ("Martensite start Ms",        f"{Ms_v:.0f}",                  "\u00b0C"),
                     ("Grain growth factor K_gg",   f"{K_gg:.4f}",                  ""),
                     ("Grain coarsening (approx.)", f"{round((1-n_s/100)*100,1)}",  "%"),
                     ("JMAK exponent",               "n=2.0 (Q+T)  n=1.8 (Ann.)",  ""),
@@ -2089,3 +2047,4 @@ else:
         else:
             st.info("Click Run Combined Simulation to generate the interactive "
                     "Fe-C path and microstructure animation for the current prediction.")
+
