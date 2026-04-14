@@ -10,6 +10,7 @@ Processes: Quench & Temper · Normalizing · Full Annealing · Stress Relief
 
 import os, json as json_lib, base64
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -27,307 +28,321 @@ st.set_page_config(
 )
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  DESIGN SYSTEM
+#  DESIGN SYSTEM — minimal palette (brass + dusty blue on deep slate)
 # ══════════════════════════════════════════════════════════════════════════════
-# Theme variant from sidebar toggle (read from session_state set by the toggle widget)
-_THEME_CRYO = st.session_state.get("miq_theme_cryo", False)
-_A_HOT  = "#6fa8ff" if _THEME_CRYO else "#ff7b2e"
-_A_WARM = "#89c8ff" if _THEME_CRYO else "#ffb840"
-_A_COOL = "#3db8ff"
-_A_PLSM = "#8a6cff"
-
-st.markdown(f"""
+st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-:root {{
-    --bg-0: #020510;
-    --bg-1: #060c1c;
-    --bg-2: #0a1428;
-    --fg-0: #e8f0ff;
-    --fg-1: #a8c0e5;
-    --fg-2: #6a88b2;
-    --accent-hot: {_A_HOT};
-    --accent-warm: {_A_WARM};
-    --accent-cool: {_A_COOL};
-    --accent-plasma: {_A_PLSM};
-    --border-dim: rgba(100,160,240,0.14);
-    --border-mid: rgba(100,160,240,0.24);
-    --card-bg: rgba(8,14,28,0.72);
-}}
+:root {
+    --bg-base: #0a0e16;
+    --bg-sink: #070a10;
+    --bg-surface: rgba(16,22,32,0.72);
+    --bg-surface-2: rgba(22,28,40,0.55);
+    --border-dim: rgba(180,200,230,0.08);
+    --border: rgba(180,200,230,0.16);
+    --border-strong: rgba(180,200,230,0.28);
+    --fg-primary: #e8edf5;
+    --fg-secondary: #9aa5ba;
+    --fg-muted: #5a6578;
+    --accent: #c9a56b;
+    --accent-dim: rgba(201,165,107,0.55);
+    --accent-cool: #6faed9;
+    --status-warn: #d4a056;
+    --status-err: #c85858;
+}
 
-html, body, [class*="css"] {{ font-family: 'Inter', sans-serif !important; color: var(--fg-1) !important; }}
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif !important;
+    color: var(--fg-primary) !important;
+}
 
-/* Hide Streamlit chrome but keep sidebar toggle accessible (critical for mobile) */
-#MainMenu, footer {{ visibility: hidden !important; }}
-[data-testid="stDecoration"] {{ display: none !important; }}
-[data-testid="stToolbar"] {{ visibility: hidden !important; }}
-header[data-testid="stHeader"] {{ background: transparent !important; height: auto !important; }}
-[data-testid="collapsedControl"] {{
+#MainMenu, footer { visibility: hidden !important; }
+[data-testid="stDecoration"] { display: none !important; }
+[data-testid="stToolbar"] { visibility: hidden !important; }
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    height: auto !important;
+}
+
+/* ── Sidebar toggle: force visible above everything on all viewports ── */
+[data-testid="collapsedControl"] {
     visibility: visible !important;
     display: flex !important;
-    background: rgba(8,14,28,0.90) !important;
-    border: 1px solid var(--border-mid) !important;
-    border-radius: 10px !important;
-    backdrop-filter: blur(10px) !important;
-    box-shadow: 0 0 18px rgba(61,184,255,0.22) !important;
-}}
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 0.7rem !important;
+    left: 0.7rem !important;
+    z-index: 999999 !important;
+    width: 44px !important;
+    height: 44px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(12,16,24,0.95) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 8px !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.55) !important;
+}
+[data-testid="collapsedControl"] svg {
+    color: var(--accent) !important;
+    fill: var(--accent) !important;
+    width: 22px !important;
+    height: 22px !important;
+}
 
-/* ── Dynamic molten + plasma background ── */
-.stApp {{
+/* ── App background — single flat slate, no animation ── */
+.stApp {
     background:
-        radial-gradient(ellipse 70% 45% at 16% 6%,  rgba(255,123,46,0.07) 0%, transparent 60%),
-        radial-gradient(ellipse 65% 45% at 86% 94%, rgba(61,184,255,0.08) 0%, transparent 62%),
-        radial-gradient(ellipse 100% 80% at 50% 50%, #060c1c 0%, #020510 68%, #000208 100%);
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,165,107,0.025) 0%, transparent 55%),
+        linear-gradient(180deg, #0a0e16 0%, #070a10 100%) !important;
     min-height: 100vh;
-    position: relative;
-}}
-.stApp::before {{
-    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background: conic-gradient(from 0deg at 50% 50%,
-        transparent 0deg,
-        rgba(61,184,255,0.022) 60deg,
-        transparent 120deg,
-        rgba(255,123,46,0.020) 240deg,
-        transparent 320deg);
-    animation: miq-sweep 38s linear infinite;
-}}
-.stApp::after {{
-    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background-image:
-        radial-gradient(circle at 22% 28%, rgba(61,184,255,0.045) 0%, transparent 28%),
-        radial-gradient(circle at 78% 72%, rgba(255,123,46,0.038) 0%, transparent 28%);
-    animation: miq-pulse 9s ease-in-out infinite alternate;
-}}
-@keyframes miq-sweep {{ from{{transform:rotate(0)}} to{{transform:rotate(360deg)}} }}
-@keyframes miq-pulse {{ from{{opacity:0.55}} to{{opacity:1}} }}
-@keyframes miq-shimmer {{
-    0%  {{ background-position: -200% 0; }}
-    100% {{ background-position: 200% 0; }}
-}}
+}
 
-[data-testid="stAppViewContainer"] > .main {{ position: relative; z-index: 1; }}
+[data-testid="stAppViewContainer"] > .main { position: relative; z-index: 1; }
 
 /* ── Sidebar ── */
-[data-testid="stSidebar"] {{
-    background: linear-gradient(180deg,
-        rgba(6,12,26,0.97) 0%,
-        rgba(10,16,32,0.94) 45%,
-        rgba(4,8,18,0.98) 100%) !important;
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0c121c 0%, #080c14 100%) !important;
     border-right: 1px solid var(--border-dim) !important;
-    backdrop-filter: blur(14px) !important;
-}}
-[data-testid="stSidebar"]::before {{
-    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent-hot) 22%,
-                var(--accent-cool) 78%, transparent);
-    opacity: 0.8; z-index: 10;
-}}
-[data-testid="stSidebar"] .block-container {{ padding: 1.0rem 0.95rem !important; }}
-[data-testid="stSidebar"] label {{
-    color: var(--fg-2) !important;
+}
+[data-testid="stSidebar"]::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+}
+[data-testid="stSidebar"] .block-container { padding: 1rem 0.9rem !important; }
+[data-testid="stSidebar"] label, [data-testid="stSidebar"] p {
+    color: var(--fg-secondary) !important;
     font-size: 0.72rem !important;
-    letter-spacing: 0.12em !important;
+    letter-spacing: 0.10em !important;
     text-transform: uppercase !important;
-    font-weight: 600 !important;
-}}
+    font-weight: 500 !important;
+}
 
-/* ── Number input ── */
-.stNumberInput input {{
-    background: rgba(4,10,24,0.92) !important;
-    border: 1px solid var(--border-mid) !important;
-    border-radius: 8px !important;
-    color: var(--fg-0) !important;
+/* ── Inputs ── */
+.stNumberInput input, .stSelectbox > div > div, .stTextInput input {
+    background: rgba(8,12,20,0.90) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+    color: var(--fg-primary) !important;
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.86rem !important;
-    transition: all 0.22s ease !important;
-}}
-.stNumberInput input:focus {{
-    border-color: var(--accent-cool) !important;
-    box-shadow: 0 0 0 3px rgba(61,184,255,0.13), 0 0 24px rgba(61,184,255,0.22) !important;
-}}
-.stNumberInput button {{
-    background: rgba(4,10,24,0.92) !important;
+    font-size: 0.84rem !important;
+}
+.stNumberInput input:focus, .stTextInput input:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 1px var(--accent-dim) !important;
+    outline: none !important;
+}
+.stNumberInput button {
+    background: transparent !important;
     border: 1px solid var(--border-dim) !important;
-    color: var(--accent-cool) !important;
-}}
+    color: var(--fg-secondary) !important;
+}
 
 /* ── Sliders ── */
-[data-testid="stSlider"] > div > div > div > div {{
-    background: linear-gradient(90deg, var(--accent-hot) 0%, var(--accent-cool) 100%) !important;
-    height: 5px !important;
-}}
-[data-testid="stSlider"] [role="slider"] {{
-    background: var(--fg-0) !important;
-    border: 2px solid var(--accent-cool) !important;
-    box-shadow: 0 0 14px rgba(61,184,255,0.60), 0 0 6px rgba(255,123,46,0.35) !important;
-    width: 18px !important; height: 18px !important;
-}}
-[data-testid="stSlider"] p {{
+[data-testid="stSlider"] > div > div > div > div {
+    background: var(--accent) !important;
+    height: 2px !important;
+}
+[data-testid="stSlider"] [role="slider"] {
+    background: var(--fg-primary) !important;
+    border: 2px solid var(--accent) !important;
+    box-shadow: 0 0 0 4px rgba(201,165,107,0.15) !important;
+    width: 14px !important; height: 14px !important;
+}
+[data-testid="stSlider"] p {
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.78rem !important;
-    color: var(--accent-cool) !important;
-}}
+    font-size: 0.76rem !important;
+    color: var(--accent) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
 
-/* ── Select ── */
-.stSelectbox > div > div {{
-    background: rgba(4,10,24,0.92) !important;
-    border: 1px solid var(--border-mid) !important;
-    border-radius: 8px !important;
-    color: var(--fg-0) !important;
-}}
-
-/* ── Toggle (theme switcher) ── */
-[data-testid="stToggle"] label p {{
-    color: var(--fg-1) !important;
-    font-size: 0.74rem !important;
-    letter-spacing: 0.10em !important;
-    font-weight: 600 !important;
-}}
-[data-testid="stToggle"] [data-baseweb="toggle"] > div:first-child {{
-    background: linear-gradient(90deg, var(--accent-hot), var(--accent-cool)) !important;
-}}
-
-/* ── Primary button (with shimmer sweep on hover) ── */
-.stButton > button[kind="primary"] {{
-    background: linear-gradient(135deg, #002a60 0%, #004db0 42%, #005bcc 72%, #003680 100%) !important;
-    border: 1px solid rgba(61,184,255,0.55) !important;
-    color: var(--fg-0) !important;
-    border-radius: 11px !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.92rem !important;
-    letter-spacing: 0.16em !important;
-    text-transform: uppercase !important;
-    padding: 0.78rem 1.4rem !important;
-    box-shadow: 0 6px 30px rgba(0,90,204,0.45),
-                inset 0 1px 0 rgba(255,255,255,0.14) !important;
-    transition: all 0.28s cubic-bezier(.2,.8,.4,1) !important;
-    width: 100% !important;
-    position: relative !important;
-    overflow: hidden !important;
-}}
-.stButton > button[kind="primary"]::before {{
-    content: ""; position: absolute; top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
-    transition: left 0.7s ease;
-}}
-.stButton > button[kind="primary"]:hover::before {{ left: 100%; }}
-.stButton > button[kind="primary"]:hover {{
-    background: linear-gradient(135deg, #003680 0%, #006ad0 42%, #0080e8 72%, #0052b0 100%) !important;
-    box-shadow: 0 8px 38px rgba(0,140,255,0.58),
-                inset 0 1px 0 rgba(255,255,255,0.22),
-                0 0 0 1px rgba(61,184,255,0.55) !important;
-    transform: translateY(-2px) !important;
-}}
-.stButton > button[kind="primary"]:active {{ transform: translateY(-1px) scale(0.99) !important; }}
-
-/* ── Tabs ── */
-.stTabs [data-baseweb="tab-list"] {{
-    background: rgba(4,10,24,0.90) !important;
-    border: 1px solid var(--border-dim) !important;
-    border-radius: 14px !important;
-    padding: 5px !important; gap: 3px !important;
-    overflow-x: auto !important; flex-wrap: nowrap !important;
-    backdrop-filter: blur(10px) !important;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.32) !important;
-}}
-.stTabs [data-baseweb="tab"] {{
-    border-radius: 9px !important;
-    color: var(--fg-2) !important;
+/* ── Primary button ── */
+.stButton > button[kind="primary"] {
+    background: transparent !important;
+    border: 1px solid var(--accent) !important;
+    color: var(--accent) !important;
+    border-radius: 3px !important;
     font-family: 'Rajdhani', sans-serif !important;
     font-weight: 600 !important;
     font-size: 0.88rem !important;
-    letter-spacing: 0.08em !important;
+    letter-spacing: 0.22em !important;
     text-transform: uppercase !important;
-    padding: 0.44rem 1.10rem !important;
+    padding: 0.70rem 1.2rem !important;
+    transition: all 0.22s ease !important;
+    width: 100% !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background: rgba(201,165,107,0.08) !important;
+    border-color: var(--fg-primary) !important;
+    color: var(--fg-primary) !important;
+    transform: none !important;
+}
+.stButton > button[kind="primary"]:active { transform: translateY(1px) !important; }
+.stButton > button[kind="secondary"] {
+    background: transparent !important;
+    border: 1px solid var(--border) !important;
+    color: var(--fg-secondary) !important;
+    border-radius: 3px !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+}
+
+/* ── Tabs ── */
+.stTabs [data-baseweb="tab-list"] {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border-dim) !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+}
+.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none !important; }
+.stTabs [data-baseweb="tab"] {
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--fg-muted) !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.86rem !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+    padding: 0.62rem 1.15rem !important;
     white-space: nowrap !important;
-    transition: all 0.22s !important;
-}}
-.stTabs [data-baseweb="tab"]:hover {{
-    color: var(--fg-1) !important;
-    background: rgba(61,184,255,0.08) !important;
-}}
-.stTabs [data-baseweb="tab"][aria-selected="true"] {{
-    background: linear-gradient(135deg, rgba(255,123,46,0.18), rgba(61,184,255,0.22)) !important;
-    color: var(--fg-0) !important;
-    box-shadow: 0 0 22px rgba(61,184,255,0.24),
-                inset 0 1px 0 rgba(255,255,255,0.10) !important;
-}}
+    border-bottom: 2px solid transparent !important;
+    transition: all 0.18s !important;
+    flex-shrink: 0 !important;
+}
+.stTabs [data-baseweb="tab"]:hover { color: var(--fg-secondary) !important; }
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    color: var(--accent) !important;
+    border-bottom: 2px solid var(--accent) !important;
+    box-shadow: none !important;
+}
 
 /* ── Expander ── */
-[data-testid="stExpander"] {{
-    background: var(--card-bg) !important;
+[data-testid="stExpander"] {
+    background: var(--bg-surface) !important;
     border: 1px solid var(--border-dim) !important;
-    border-radius: 11px !important;
-    backdrop-filter: blur(8px) !important;
-}}
-[data-testid="stExpander"] summary {{ color: var(--fg-1) !important; font-size: 0.82rem !important; }}
+    border-radius: 4px !important;
+}
+[data-testid="stExpander"] summary {
+    color: var(--fg-secondary) !important;
+    font-size: 0.80rem !important;
+}
 
 /* ── DataFrame ── */
-.stDataFrame {{
-    border-radius: 10px !important;
+.stDataFrame {
+    border-radius: 4px !important;
     overflow: hidden !important;
     border: 1px solid var(--border-dim) !important;
-}}
+}
 
-hr {{ border: none !important; border-top: 1px solid var(--border-dim) !important; margin: 14px 0 !important; }}
+hr { border: none !important; border-top: 1px solid var(--border-dim) !important; margin: 14px 0 !important; }
 
-.block-container {{
-    padding: 1.5rem 2.0rem 1rem !important;
+iframe { max-width: 100% !important; }
+
+.block-container {
+    padding: 1.5rem 2rem 1rem !important;
     max-width: 1440px !important;
     position: relative;
     z-index: 1;
-}}
+}
 
 /* ── Metric cards grid ── */
-.miq-cards {{
+.miq-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-    gap: 14px;
-    margin: 0 0 18px;
-}}
+    grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+    gap: 12px;
+    margin: 0 0 16px;
+}
 
-.miq-mobile-hint {{ display: none; }}
+/* ── Success/warning/error tint ── */
+div[data-testid="stAlert"] {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border-dim) !important;
+    border-left: 2px solid var(--accent) !important;
+    border-radius: 3px !important;
+}
 
-/* ── Mobile breakpoints ── */
-@media (max-width: 1024px) {{
-    .block-container {{ padding: 1.0rem 1.2rem 0.8rem !important; }}
-}}
-@media (max-width: 768px) {{
-    .block-container {{ padding: 0.75rem 0.85rem 0.6rem !important; }}
-    .stTabs [data-baseweb="tab"] {{
+.miq-mobile-hint { display: none; }
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE BREAKPOINTS — aggressive column stacking
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    .block-container { padding: 0.9rem 1rem 0.7rem !important; }
+}
+
+@media (max-width: 768px) {
+    .block-container {
+        padding: 0.7rem 0.75rem 0.6rem !important;
+        max-width: 100vw !important;
+    }
+    /* Force all horizontal columns to stack vertically */
+    [data-testid="stHorizontalBlock"],
+    [data-testid="stColumns"] {
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+    }
+    [data-testid="column"],
+    [data-testid="stColumn"] {
+        min-width: 100% !important;
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+    [data-testid="stSidebar"] {
+        min-width: 280px !important;
+        max-width: 85vw !important;
+    }
+    .stTabs [data-baseweb="tab"] {
         font-size: 0.68rem !important;
-        padding: 0.32rem 0.62rem !important;
-        letter-spacing: 0.04em !important;
-    }}
-    .miq-hero-title {{ font-size: 2.1rem !important; letter-spacing: 0.04em !important; }}
-    .miq-hero-sub {{ font-size: 0.66rem !important; letter-spacing: 0.14em !important; }}
-    .miq-cards {{ grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }}
-    [data-testid="collapsedControl"] {{
-        top: 0.6rem !important; left: 0.6rem !important;
-        width: 44px !important; height: 44px !important;
-    }}
-    .miq-mobile-hint {{
+        padding: 0.5rem 0.75rem !important;
+        letter-spacing: 0.08em !important;
+    }
+    .miq-hero-title { font-size: 2rem !important; letter-spacing: 0.06em !important; }
+    .miq-hero-sub   { font-size: 0.60rem !important; letter-spacing: 0.18em !important; }
+    .miq-cards {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    .miq-mobile-hint {
         display: flex !important;
         align-items: center;
         gap: 10px;
-        background: linear-gradient(135deg, rgba(255,123,46,0.14), rgba(61,184,255,0.14));
-        border: 1px solid var(--border-mid);
-        border-radius: 10px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-dim);
+        border-left: 2px solid var(--accent);
+        border-radius: 3px;
         padding: 10px 14px;
-        margin: 0 0 14px;
-        font-size: 0.76rem;
-        color: var(--fg-1);
-    }}
-}}
-@media (max-width: 480px) {{
-    .miq-hero-title {{ font-size: 1.6rem !important; }}
-    .miq-hero-sub {{ font-size: 0.56rem !important; letter-spacing: 0.10em !important; }}
-    .miq-cards {{ grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }}
-    .block-container {{ padding: 0.45rem !important; }}
-}}
+        margin: 46px 0 14px;
+        font-size: 0.74rem;
+        color: var(--fg-secondary);
+    }
+    .miq-mobile-hint span:first-child { color: var(--accent); }
+    /* push content below floating toggle */
+    [data-testid="stAppViewContainer"] > .main {
+        padding-top: 0.4rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .block-container { padding: 0.5rem 0.5rem 0.4rem !important; }
+    .miq-hero-title { font-size: 1.55rem !important; }
+    .miq-hero-sub   { font-size: 0.54rem !important; letter-spacing: 0.14em !important; }
+    .miq-cards { grid-template-columns: 1fr !important; }
+    .stTabs [data-baseweb="tab"] {
+        font-size: 0.62rem !important;
+        padding: 0.45rem 0.55rem !important;
+    }
+    .stNumberInput input { font-size: 0.78rem !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -337,21 +352,18 @@ hr {{ border: none !important; border-top: 1px solid var(--border-dim) !importan
 # ══════════════════════════════════════════════════════════════════════════════
 
 def html_metric_card(title, value, unit, color, icon, subtitle=""):
-    sub = (f'<div style="font-size:0.67rem;color:rgba(150,190,240,0.30);margin-top:4px;">'
+    sub = (f'<div style="font-size:0.65rem;color:rgba(160,185,220,0.28);margin-top:3px;">'
            f'{subtitle}</div>') if subtitle else ""
     return (
-        f'<div style="background:linear-gradient(145deg,rgba(6,12,34,0.97),rgba(4,7,18,0.99));'
-        f'border:1px solid {color}44;border-top:3px solid {color};border-radius:14px;'
-        f'padding:16px 12px 14px;text-align:center;'
-        f'box-shadow:0 6px 26px rgba(0,0,0,0.55),0 0 22px {color}12;'
-        f'position:relative;overflow:hidden;">'
-        f'<div style="position:absolute;top:-26px;right:-14px;font-size:5rem;opacity:0.05;">{icon}</div>'
-        f'<div style="font-size:1.6rem;margin-bottom:3px;line-height:1;">{icon}</div>'
-        f'<div style="font-size:2.15rem;font-weight:700;color:{color};'
-        f'font-family:\'Rajdhani\',sans-serif;line-height:1.05;letter-spacing:-0.01em;">{value}</div>'
-        f'<div style="font-size:0.64rem;color:rgba(150,190,240,0.40);text-transform:uppercase;'
-        f'letter-spacing:0.16em;margin-top:6px;font-weight:600;">{title}</div>'
-        f'<div style="font-size:0.72rem;color:{color}88;margin-top:2px;">{unit}</div>'
+        f'<div style="background:rgba(10,16,28,0.95);'
+        f'border:1px solid rgba(160,185,220,0.10);border-top:2px solid {color};border-radius:8px;'
+        f'padding:14px 10px 12px;text-align:center;">'
+        f'<div style="font-size:1.3rem;margin-bottom:4px;line-height:1;">{icon}</div>'
+        f'<div style="font-size:1.95rem;font-weight:700;color:{color};'
+        f'font-family:\'Rajdhani\',sans-serif;line-height:1.05;">{value}</div>'
+        f'<div style="font-size:0.62rem;color:rgba(160,185,220,0.38);text-transform:uppercase;'
+        f'letter-spacing:0.14em;margin-top:5px;font-weight:600;">{title}</div>'
+        f'<div style="font-size:0.68rem;color:rgba(160,185,220,0.28);margin-top:2px;">{unit}</div>'
         f'{sub}</div>'
     )
 
@@ -914,6 +926,193 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
         margin=dict(l=62, r=62, t=58, b=150),
     )
     return fig
+
+
+def build_immersive_phase_html(C_val, ht_temp, t_temp, process_key, cool_medium,
+                                Mn=0.85, Cr=1.05, Mo=0.20):
+    """Canvas-based immersive Fe-C phase diagram with particle effects and interactive tooltips."""
+    Ms_val = max(80.0, 539 - 423*C_val - 30.4*Mn - 12.1*Cr - 7.5*Mo)
+    op_phase = get_phase(C_val, ht_temp)
+    op_color = PHASE_COLORS.get(op_phase, "#ffffff")
+    cfg = json_lib.dumps({
+        "C": round(C_val, 4), "htT": round(ht_temp, 1), "tT": round(t_temp, 1),
+        "Ms": round(Ms_val, 1), "proc": process_key, "cool": cool_medium,
+        "opPh": op_phase, "opCol": op_color,
+    })
+    return _IMMERSIVE_HTML.replace("__CFG__", cfg)
+
+
+_IMMERSIVE_HTML = r"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;font-family:Inter,-apple-system,sans-serif;color:#c0d0e8}
+#w{position:relative;width:100%;height:700px}
+canvas{display:block;width:100%;height:100%;border-radius:6px;cursor:crosshair}
+#tt{position:absolute;display:none;background:rgba(6,10,22,0.94);backdrop-filter:blur(10px);
+border:1px solid rgba(160,185,220,0.22);border-radius:6px;padding:10px 14px;pointer-events:none;
+z-index:10;min-width:190px;max-width:280px;box-shadow:0 6px 24px rgba(0,0,0,0.5)}
+.tp{font-weight:700;font-size:14px;margin-bottom:4px}
+.tc{font-size:11px;color:rgba(170,190,220,0.6);font-family:monospace;margin-bottom:6px}
+.td{font-size:11px;color:rgba(170,190,220,0.42);line-height:1.45}
+#lg{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:10px;
+flex-wrap:wrap;justify-content:center;background:rgba(6,10,22,0.82);
+border:1px solid rgba(160,185,220,0.12);border-radius:5px;padding:5px 12px;z-index:5}
+.li{display:flex;align-items:center;gap:4px;font-size:9px;color:rgba(170,190,220,0.55);white-space:nowrap}
+.ld{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+@media(max-width:600px){#w{height:480px}#lg{gap:6px;padding:4px 8px}.li{font-size:8px}}
+</style></head><body>
+<div id="w"><canvas id="c"></canvas>
+<div id="tt"><div class="tp" id="tp"></div><div class="tc" id="tc"></div><div class="td" id="td"></div></div>
+<div id="lg"></div></div>
+<script>
+var CFG=__CFG__;
+var A1=723,A3F=912,PER=1495,MLT=1538,EUT=1147,CE=0.76,CA=2.11,MXC=2.3,MXT=1650,CP=0.17;
+function a3(c){return A3F-(A3F-A1)/CE*Math.min(c,CE)}
+function acm(c){return A1+(EUT-A1)/(CA-CE)*(c-CE)}
+function lq(c){return c<=CP?MLT-(MLT-PER)/CP*c:c<=CA?PER+(EUT-PER)/(CA-CP)*(c-CP):EUT}
+function ph(c,T){if(T>=lq(c))return'Liquid';
+if(T>=A1){if(c<=CE&&T<a3(c))return'Austenite + Ferrite';if(c>CE&&T<acm(c))return'Austenite + Cementite';return'Austenite'}
+if(c<=0.022)return'Ferrite';if(c<=CE)return'Ferrite + Pearlite';return'Pearlite + Cementite'}
+var PI={'Liquid':{c:'#ffeaa0',d:'Molten steel \u2014 atoms in disordered liquid state. Maximum energy, no crystal structure. All elements fully dissolved.'},
+'Austenite':{c:'#f0c830',d:'Face-centered cubic (FCC) \u03b3-iron. High-temperature stable phase. Dissolves up to 2.11% carbon. Non-magnetic. Parent phase for all transformations.'},
+'Austenite + Ferrite':{c:'#e89030',d:'Intercritical region. FCC austenite and BCC ferrite coexist. Industrially used for dual-phase steel production with optimised strength-ductility.'},
+'Austenite + Cementite':{c:'#d05548',d:'Hyper-eutectoid zone. Cementite (Fe\u2083C) precipitates from austenite along grain boundaries on slow cooling.'},
+'Ferrite':{c:'#50c878',d:'Body-centered cubic (BCC) \u03b1-iron. Soft, ductile, magnetic. Maximum carbon solubility only 0.022 wt%. Matrix phase in low-carbon steels.'},
+'Ferrite + Pearlite':{c:'#4aa8c0',d:'Two-phase equilibrium. Pearlite has lamellar ferrite + cementite structure. Balanced strength, hardness, and ductility.'},
+'Pearlite + Cementite':{c:'#9a68c4',d:'Hyper-eutectoid mixture. Excess carbon forms continuous cementite network around pearlite colonies. Hard but brittle.'}};
+var cv=document.getElementById('c'),cx=cv.getContext('2d'),wp=document.getElementById('w');
+var W,H,ML=58,MR=40,MT=32,MB=52,PW,PH;
+function rsz(){var r=wp.getBoundingClientRect();W=r.width;H=r.height;var d=window.devicePixelRatio||1;
+cv.width=W*d;cv.height=H*d;cv.style.width=W+'px';cv.style.height=H+'px';
+cx.setTransform(d,0,0,d,0,0);PW=W-ML-MR;PH=H-MT-MB}
+rsz();window.addEventListener('resize',rsz);
+function cX(c){return ML+c/MXC*PW}function tY(T){return MT+(1-T/MXT)*PH}
+function xC(x){return Math.max(0,Math.min(MXC,(x-ML)/PW*MXC))}
+function yT(y){return Math.max(0,Math.min(MXT,(1-(y-MT)/PH)*MXT))}
+var ps=[];
+function sp(x,y,t){if(ps.length>200)return;var p={x:x,y:y,a:0,t:t};
+if(t===0){p.vx=(Math.random()-0.5)*0.7;p.vy=-(0.3+Math.random()*0.5);p.s=1.5+Math.random()*2;
+p.l=55+Math.random()*55;p.c='255,'+(200+Math.random()*55|0)+','+(70+Math.random()*60|0)}
+else if(t===1){p.vx=(Math.random()-0.5)*0.1;p.vy=(Math.random()-0.5)*0.1;p.s=1+Math.random();
+p.l=80+Math.random()*70;p.c='240,200,48'}
+else{p.vx=(Math.random()-0.5)*0.35;p.vy=(Math.random()-0.5)*0.35;p.s=1+Math.random()*1.3;
+p.l=35+Math.random()*40;p.c=(200+Math.random()*55|0)+','+(110+Math.random()*40|0)+','+(20+Math.random()*30|0)}
+ps.push(p)}
+var tk=0,N=60;
+function draw(){tk++;cx.clearRect(0,0,W,H);
+var bg=cx.createLinearGradient(ML,H-MB,ML,MT);
+bg.addColorStop(0,'#04060e');bg.addColorStop(0.18,'#080c18');bg.addColorStop(0.38,'#140a08');
+bg.addColorStop(0.56,'#2a1006');bg.addColorStop(0.72,'#4a1a04');bg.addColorStop(0.86,'#803810');
+bg.addColorStop(0.96,'#b85818');bg.addColorStop(1,'#d87828');
+cx.fillStyle=bg;cx.fillRect(ML,MT,PW,PH);
+cx.save();cx.beginPath();cx.rect(ML,MT,PW,PH);cx.clip();
+var so=(tk*0.15)%6,i;
+cx.fillStyle='rgba(80,200,120,0.07)';cx.beginPath();
+cx.moveTo(cX(0),tY(0));cx.lineTo(cX(0.022),tY(0));cx.lineTo(cX(0.022),tY(A1));cx.lineTo(cX(0),tY(A1));cx.fill();
+var gs=12;cx.fillStyle='rgba(80,200,120,0.10)';
+for(var gx=cX(0);gx<cX(0.022);gx+=gs)for(var gy=tY(A1);gy<tY(0);gy+=gs){cx.beginPath();cx.arc(gx,gy,0.7,0,6.28);cx.fill()}
+cx.fillStyle='rgba(74,168,192,0.08)';cx.beginPath();
+cx.moveTo(cX(0.022),tY(0));cx.lineTo(cX(CE),tY(0));cx.lineTo(cX(CE),tY(A1));cx.lineTo(cX(0.022),tY(A1));cx.fill();
+cx.strokeStyle='rgba(86,180,211,0.05)';cx.lineWidth=0.5;
+for(var y=tY(A1);y<tY(0);y+=6){cx.beginPath();cx.moveTo(cX(0.022),y+so);cx.lineTo(cX(CE),y+so);cx.stroke()}
+cx.fillStyle='rgba(154,104,196,0.08)';cx.beginPath();
+cx.moveTo(cX(CE),tY(0));cx.lineTo(cX(MXC),tY(0));cx.lineTo(cX(MXC),tY(A1));cx.lineTo(cX(CE),tY(A1));cx.fill();
+cx.strokeStyle='rgba(154,104,196,0.05)';
+for(y=tY(A1);y<tY(0);y+=4){cx.beginPath();cx.moveTo(cX(CE),y+so);cx.lineTo(cX(MXC),y+so);cx.stroke()}
+var tg=cx.createLinearGradient(0,tY(A3F),0,tY(A1));
+tg.addColorStop(0,'rgba(232,144,48,0.04)');tg.addColorStop(1,'rgba(232,144,48,0.14)');
+cx.fillStyle=tg;cx.beginPath();cx.moveTo(cX(0),tY(A3F));
+for(i=0;i<=N;i++){var c=CE*i/N;cx.lineTo(cX(c),tY(a3(c)))}cx.lineTo(cX(CE),tY(A1));cx.lineTo(cX(0),tY(A1));cx.fill();
+cx.fillStyle='rgba(208,85,72,0.08)';cx.beginPath();cx.moveTo(cX(CE),tY(A1));
+for(i=0;i<=N;i++){c=CE+(CA-CE)*i/N;cx.lineTo(cX(c),tY(acm(c)))}cx.lineTo(cX(MXC),tY(EUT));cx.lineTo(cX(MXC),tY(A1));cx.fill();
+var sh=0.07+0.03*Math.sin(tk*0.03);
+cx.fillStyle='rgba(240,200,48,'+sh+')';cx.beginPath();cx.moveTo(cX(0),tY(MLT));cx.lineTo(cX(CP),tY(PER));
+for(i=0;i<=N;i++){c=CE+(CA-CE)*i/N;cx.lineTo(cX(c),tY(acm(c)))}
+cx.lineTo(cX(CE),tY(A1));for(i=N;i>=0;i--){c=CE*i/N;cx.lineTo(cX(c),tY(a3(c)))}cx.fill();
+var lg2=0.07+0.025*Math.sin(tk*0.05);
+cx.fillStyle='rgba(255,238,160,'+lg2+')';cx.beginPath();cx.moveTo(cX(0),tY(MXT));cx.lineTo(cX(MXC),tY(MXT));
+for(i=N;i>=0;i--){c=MXC*i/N;cx.lineTo(cX(c),tY(lq(c)))}cx.fill();
+var gw=1.6+0.25*Math.sin(tk*0.04);
+cx.strokeStyle='#e0a030';cx.lineWidth=gw;cx.shadowColor='#e0a030';cx.shadowBlur=4;
+cx.beginPath();for(i=0;i<=80;i++){c=CE*i/80;cx[i?'lineTo':'moveTo'](cX(c),tY(a3(c)))}cx.stroke();
+cx.strokeStyle='#d05050';cx.shadowColor='#d05050';
+cx.beginPath();for(i=0;i<=80;i++){c=CE+(CA-CE)*i/80;cx[i?'lineTo':'moveTo'](cX(c),tY(acm(c)))}cx.stroke();
+cx.shadowBlur=0;cx.strokeStyle='rgba(128,170,238,0.55)';cx.lineWidth=1.4;cx.setLineDash([6,4]);
+cx.beginPath();cx.moveTo(cX(0),tY(A1));cx.lineTo(cX(MXC),tY(A1));cx.stroke();cx.setLineDash([]);
+cx.strokeStyle='rgba(255,240,160,0.65)';cx.shadowColor='#ffe8a0';cx.shadowBlur=5;cx.lineWidth=1.8;
+cx.beginPath();for(i=0;i<=80;i++){c=MXC*i/80;cx[i?'lineTo':'moveTo'](cX(c),tY(lq(c)))}cx.stroke();
+cx.shadowBlur=0;cx.strokeStyle='rgba(130,110,255,0.4)';cx.lineWidth=1.1;cx.setLineDash([7,3,2,3]);
+cx.beginPath();cx.moveTo(cX(0),tY(CFG.Ms));cx.lineTo(cX(MXC),tY(CFG.Ms));cx.stroke();cx.setLineDash([]);
+cx.strokeStyle='rgba(0,180,255,0.45)';cx.lineWidth=1.4;cx.setLineDash([7,5]);
+cx.beginPath();cx.moveTo(cX(0),tY(CFG.htT));cx.lineTo(cX(MXC),tY(CFG.htT));cx.stroke();
+if(CFG.tT>0){cx.strokeStyle='rgba(240,160,48,0.35)';cx.beginPath();cx.moveTo(cX(0),tY(CFG.tT));cx.lineTo(cX(MXC),tY(CFG.tT));cx.stroke()}
+cx.strokeStyle='rgba(80,227,194,0.35)';cx.setLineDash([4,4]);
+cx.beginPath();cx.moveTo(cX(CFG.C),tY(0));cx.lineTo(cX(CFG.C),tY(MXT));cx.stroke();cx.setLineDash([]);
+var ox=cX(CFG.C),oy=tY(CFG.htT),pu=0.7+0.3*Math.sin(tk*0.06);
+for(var r=26;r>=8;r-=4.5){cx.fillStyle='rgba(255,107,53,'+((1-r/26)*0.14*pu)+')';cx.beginPath();cx.arc(ox,oy,r,0,6.28);cx.fill()}
+cx.fillStyle=CFG.opCol;cx.shadowColor=CFG.opCol;cx.shadowBlur=10;
+cx.beginPath();cx.arc(ox,oy,5.5,0,6.28);cx.fill();
+cx.strokeStyle='rgba(255,255,255,0.85)';cx.lineWidth=1.8;cx.shadowBlur=0;
+cx.beginPath();cx.arc(ox,oy,5.5,0,6.28);cx.stroke();
+if(tk%2===0)for(i=0;i<2;i++){c=Math.random()*MXC;var lt=lq(c);if(lt<MXT)sp(cX(c),tY(lt+Math.random()*(MXT-lt)),0)}
+if(tk%5===0){c=Math.random()*CA;var lo=c<=CE?a3(c):acm(c),hi=lq(c);if(hi>lo&&hi>A1)sp(cX(c),tY(lo+Math.random()*(hi-lo)),1)}
+if(tk%4===0){c=Math.random()*CE;var at=a3(c);if(at>A1)sp(cX(c),tY(A1+Math.random()*(at-A1)),2)}
+for(i=ps.length-1;i>=0;i--){var p=ps[i];p.x+=p.vx;p.y+=p.vy;p.a++;
+if(p.a>p.l||p.x<ML||p.x>W-MR||p.y<MT||p.y>H-MB){ps.splice(i,1);continue}
+var al=(1-p.a/p.l)*0.45;cx.fillStyle='rgba('+p.c+','+al+')';cx.beginPath();cx.arc(p.x,p.y,p.s,0,6.28);cx.fill();
+cx.fillStyle='rgba('+p.c+','+(al*0.2)+')';cx.beginPath();cx.arc(p.x,p.y,p.s*2.5,0,6.28);cx.fill()}
+cx.restore();
+cx.strokeStyle='rgba(160,185,220,0.05)';cx.lineWidth=0.5;
+for(var T=0;T<=MXT;T+=200){cx.beginPath();cx.moveTo(ML,tY(T));cx.lineTo(ML+PW,tY(T));cx.stroke()}
+for(c=0;c<=MXC;c+=0.5){cx.beginPath();cx.moveTo(cX(c),MT);cx.lineTo(cX(c),MT+PH);cx.stroke()}
+cx.fillStyle='rgba(160,185,220,0.50)';cx.font='10px monospace';cx.textAlign='right';
+for(T=0;T<=MXT;T+=200)cx.fillText(T+'\u00b0C',ML-7,tY(T)+3);
+cx.textAlign='center';for(c=0;c<=MXC;c+=0.5)cx.fillText(c.toFixed(1),cX(c),H-MB+16);
+cx.fillStyle='rgba(160,185,220,0.42)';cx.font='11px sans-serif';cx.textAlign='center';
+cx.fillText('Carbon Content (wt%)',ML+PW/2,H-8);
+cx.save();cx.translate(13,MT+PH/2);cx.rotate(-Math.PI/2);cx.fillText('Temperature (\u00b0C)',0,0);cx.restore();
+cx.fillStyle='rgba(220,235,255,0.35)';cx.font='bold 11px sans-serif';cx.textAlign='center';
+var lbs=[[0.011,280,'\u03b1'],[0.38,300,'\u03b1+P'],[1.55,300,'P+Fe\u2083C'],
+[0.25,790,'\u03b3+\u03b1'],[1.82,920,'\u03b3+Fe\u2083C'],[0.50,1080,'\u03b3 (Austenite)'],[1.1,1420,'Liquid']];
+for(i=0;i<lbs.length;i++)cx.fillText(lbs[i][2],cX(lbs[i][0]),tY(lbs[i][1]));
+cx.font='9px monospace';cx.textAlign='left';
+cx.fillStyle='#e0a030';cx.fillText('A3',cX(0.03),tY(a3(0.03))-5);
+cx.fillStyle='#d05050';cx.fillText('Acm',cX(CA-0.15),tY(acm(CA-0.15))-5);
+cx.fillStyle='rgba(128,170,238,0.6)';cx.fillText('A1 = 723\u00b0C',cX(MXC)+3,tY(A1)+3);
+cx.fillStyle='rgba(130,110,255,0.5)';cx.fillText('Ms = '+CFG.Ms.toFixed(0)+'\u00b0C',cX(MXC)+3,tY(CFG.Ms)+3);
+cx.fillStyle='rgba(0,180,255,0.55)';cx.fillText(CFG.htT.toFixed(0)+'\u00b0C Aust.',cX(MXC)+3,tY(CFG.htT)+3);
+if(CFG.tT>0){cx.fillStyle='rgba(240,160,48,0.5)';cx.fillText(CFG.tT.toFixed(0)+'\u00b0C Temper',cX(MXC)+3,tY(CFG.tT)+3)}
+cx.fillStyle='rgba(80,227,194,0.45)';cx.textAlign='center';cx.fillText('C='+CFG.C.toFixed(2)+'%',cX(CFG.C),tY(MXT)-3);
+cx.fillStyle='#ffd700';cx.save();cx.translate(cX(CE),tY(A1));cx.rotate(Math.PI/4);cx.fillRect(-3.5,-3.5,7,7);cx.restore();
+cx.fillStyle='rgba(255,215,0,0.6)';cx.font='9px sans-serif';cx.textAlign='left';cx.fillText('S (Eutectoid)',cX(CE)+10,tY(A1)+3);
+cx.fillStyle='#60c4ff';cx.beginPath();cx.moveTo(cX(CP),tY(PER)-4);cx.lineTo(cX(CP)-4,tY(PER)+4);cx.lineTo(cX(CP)+4,tY(PER)+4);cx.fill();
+cx.fillStyle='rgba(96,196,255,0.6)';cx.fillText('P (Peritectic)',cX(CP)+10,tY(PER)+3);
+cx.fillStyle='rgba(200,220,245,0.75)';cx.font='bold 13px Rajdhani,sans-serif';cx.textAlign='center';
+cx.fillText('Fe\u2013C Phase Diagram  \u00b7  '+CFG.opPh,W/2,20);
+cx.fillStyle='rgba(160,185,220,0.35)';cx.font='10px sans-serif';
+cx.fillText('Hover to explore phases  \u00b7  C='+CFG.C.toFixed(2)+'%  T='+CFG.htT.toFixed(0)+'\u00b0C',W/2,MT-5);
+cx.strokeStyle='rgba(160,185,220,0.12)';cx.lineWidth=1;cx.strokeRect(ML,MT,PW,PH);
+requestAnimationFrame(draw)}draw();
+var tt=document.getElementById('tt'),ttp=document.getElementById('tp'),ttc=document.getElementById('tc'),ttd=document.getElementById('td');
+function showTT(mx,my,px,py){
+if(mx<ML||mx>ML+PW||my<MT||my>MT+PH){tt.style.display='none';return}
+var c2=xC(mx),T2=yT(my),p2=ph(c2,T2),info=PI[p2];if(!info){tt.style.display='none';return}
+ttp.textContent=p2;ttp.style.color=info.c;
+ttc.textContent='C = '+c2.toFixed(3)+' wt%  \u00b7  T = '+T2.toFixed(0)+' \u00b0C';ttd.textContent=info.d;
+tt.style.display='block';var tx=px||mx+16,ty=py||my-8;
+if(tx+240>W)tx=mx-250;if(ty+130>H)ty=my-130;if(ty<0)ty=4;
+tt.style.left=tx+'px';tt.style.top=ty+'px'}
+cv.addEventListener('mousemove',function(e){var r=cv.getBoundingClientRect();showTT(e.clientX-r.left,e.clientY-r.top)});
+cv.addEventListener('mouseleave',function(){tt.style.display='none'});
+cv.addEventListener('touchstart',function(e){e.preventDefault();var t=e.touches[0],r=cv.getBoundingClientRect();
+showTT(t.clientX-r.left,t.clientY-r.top,8,8)},{passive:false});
+cv.addEventListener('touchmove',function(e){e.preventDefault();var t=e.touches[0],r=cv.getBoundingClientRect();
+showTT(t.clientX-r.left,t.clientY-r.top,8,8)},{passive:false});
+cv.addEventListener('touchend',function(){tt.style.display='none'});
+var lgd=document.getElementById('lg');var ks=Object.keys(PI);
+for(i=0;i<ks.length;i++){var d=document.createElement('div');d.className='li';
+d.innerHTML='<div class="ld" style="background:'+PI[ks[i]].c+'"></div>'+ks[i];lgd.appendChild(d)}
+</script></body></html>"""
 
 
 def _hex_to_rgba(hex_color, alpha):
@@ -1794,19 +1993,24 @@ else:
                        "predicted profile compares to the dataset average and the underlying "
                        "metallurgical state.")
 
-    # Tab 2: Enhanced Phase Diagram
+    # Tab 2: Immersive Phase Diagram
     with tab2:
-        st.plotly_chart(
-            build_phase_diagram(C_s, ht_s, tt_s, pkey, cool_s,
-                                 Mn=Mn_s, Cr=Cr_s, Mo=Mo_s),
-            width='stretch',
+        phase_html = build_immersive_phase_html(
+            C_s, ht_s, tt_s, pkey, cool_s,
+            Mn=Mn_s, Cr=Cr_s, Mo=Mo_s,
         )
+        components.html(phase_html, height=720, scrolling=False)
         st.caption(
-            "Operating point marks the austenitizing condition. "
-            "Arrows show heating (orange) and cooling (coloured by medium) paths. "
-            "Ms and Bs lines are composition-specific approximations. "
-            "The diagram shows equilibrium phases; actual microstructure depends on cooling rate."
+            "Interactive phase visualisation \u2014 hover over any region to explore its physical behaviour. "
+            "Animated particles represent the energy and structure of each phase. "
+            "The operating point marks your current austenitising condition."
         )
+        with st.expander("\U0001f4ca Classic Phase Diagram (Plotly)", expanded=False):
+            st.plotly_chart(
+                build_phase_diagram(C_s, ht_s, tt_s, pkey, cool_s,
+                                     Mn=Mn_s, Cr=Cr_s, Mo=Mo_s),
+                width='stretch',
+            )
 
     # Tab 3: T-t Profile
     with tab3:
