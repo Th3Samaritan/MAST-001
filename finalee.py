@@ -1,7 +1,7 @@
 """
 MAST IQ — Alloy Intelligence Platform
 =======================================
-By MAST  ·  Materials Advanced Science & Technology
+By MAST  ·  designed by mast lab
 AI-Powered Steel Heat Treatment Mechanical Property Predictor
 
 Targets  : Tensile · Yield · Hardness · Elongation · Fatigue
@@ -61,34 +61,16 @@ html, body, [class*="css"] {
 [data-testid="stDecoration"] { display: none !important; }
 [data-testid="stToolbar"] { visibility: hidden !important; }
 header[data-testid="stHeader"] {
-    background: transparent !important;
-    height: auto !important;
+    background: rgba(10,14,22,0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid rgba(160,185,220,0.12) !important;
+    height: 3.2rem !important;
 }
 
-/* ── Sidebar toggle: force visible above everything on all viewports ── */
-[data-testid="collapsedControl"] {
-    visibility: visible !important;
-    display: flex !important;
-    opacity: 1 !important;
-    position: fixed !important;
-    top: 0.7rem !important;
-    left: 0.7rem !important;
-    z-index: 999999 !important;
-    width: 44px !important;
-    height: 44px !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: rgba(12,16,24,0.95) !important;
-    border: 1px solid var(--border-strong) !important;
-    border-radius: 8px !important;
-    backdrop-filter: blur(12px) !important;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.55) !important;
-}
+/* Let Streamlit handle the menu structure, just color the icon */
 [data-testid="collapsedControl"] svg {
     color: var(--accent) !important;
     fill: var(--accent) !important;
-    width: 22px !important;
-    height: 22px !important;
 }
 
 /* ── App background — single flat slate, no animation ── */
@@ -1121,7 +1103,7 @@ def _hex_to_rgba(hex_color, alpha):
     return f"rgba({r},{g},{b},{alpha})"
 
 
-def build_tt_profile(process_key, ht_temp, t_temp, soak_time, t_time):
+def build_tt_profile(process_key, ht_temp, t_temp, soak_time, t_time, C=0.35, Mn=0.0, Si=0.0, Ni=0.0, Cr=0.0, Mo=0.0):
     PROFILES = {
         "Quench_Temper": {
             "color": "#4c72b0", "label": "Quench & Temper",
@@ -1175,7 +1157,7 @@ def build_tt_profile(process_key, ht_temp, t_temp, soak_time, t_time):
         name=prof["label"],
     ))
     A1_val = 723
-    A3_val = calc_a3(0.35)
+    A3_val = calc_a3(C, Mn=Mn, Si=Si, Ni=Ni, Cr=Cr, Mo=Mo)
     fig.add_trace(go.Scatter(
         x=[0, max(times)], y=[A1_val, A1_val],
         line=dict(color="#80aaee", width=1, dash="dot"),
@@ -1627,7 +1609,7 @@ st.markdown(
     'letter-spacing:0.07em;line-height:1;">MAST IQ</div>'
     '<div class="miq-hero-sub" style="color:rgba(150,190,240,0.48);font-size:0.84rem;'
     'letter-spacing:0.24em;text-transform:uppercase;margin-top:7px;">'
-    'Alloy Intelligence  &middot;  Materials Advanced Science &amp; Technology</div>'
+    'Alloy Intelligence  &middot;  designed by mast lab</div>'
     '<div style="width:110px;height:2px;'
     'background:linear-gradient(90deg,transparent,#0099ff,#f0a030,transparent);'
     'margin:14px auto 0;"></div>'
@@ -1885,6 +1867,11 @@ else:
     phase_at_ht = get_phase(C_s, ht_s)
     phase_color = PHASE_COLORS.get(phase_at_ht, "#aaa")
     temper_str  = (f"  to  {int(tt_s)}C temper") if tt_s > 0 else ""
+    
+    yt_ratio = preds["Yield_MPa"] / preds["Tensile_MPa"] if preds.get("Tensile_MPa") else 0
+    yt_color = "#e05060" if yt_ratio > 0.90 else "#50c878"
+    yt_warn = "Warning" if yt_ratio > 0.90 else "Good"
+
     st.markdown(
         f'<div style="background:linear-gradient(135deg,{pc}15,rgba(4,7,18,0.75));'
         f'border:1px solid {pc}40;border-left:4px solid {pc};'
@@ -1896,7 +1883,12 @@ else:
         f'<span style="font-size:0.76rem;color:rgba(150,190,240,0.48);margin-left:12px;">'
         f'{ht_s:.0f}C  {sk_s:.0f} min  {cool_s}{temper_str}</span>'
         f'</div>'
-        f'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+        f'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
+        f'<div style="display:flex;flex-direction:column;align-items:flex-end;margin-right:8px;">'
+        f'<span style="font-size:0.65rem;letter-spacing:0.08em;color:rgba(150,190,240,0.45);text-transform:uppercase;">Y/T Ratio</span>'
+        f'<span style="font-family:\'Rajdhani\',sans-serif;font-size:0.95rem;font-weight:600;color:{yt_color};">{yt_ratio:.2f} '
+        f'<span style="font-size:0.7rem;font-family:\'Inter\',sans-serif;">({yt_warn})</span></span>'
+        f'</div>'
         f'<span style="background:{gcol}22;border:1px solid {gcol}50;color:{gcol};'
         f'border-radius:20px;padding:3px 11px;font-size:0.73rem;font-weight:600;">{grade}</span>'
         f'<span style="background:{phase_color}22;border:1px solid {phase_color}50;color:{phase_color};'
@@ -1926,6 +1918,23 @@ else:
         '</div>',
         unsafe_allow_html=True,
     )
+
+    report_data = {
+        "Process": plabel,
+        "Composition_wt_pct": {"C": C_s, "Mn": Mn_s, "Cr": Cr_s, "Mo": Mo_s},
+        "Parameters": {"Austenitize_C": ht_s, "Soak_min": sk_s, "Quench": cool_s, "Temper_C": tt_s, "Temper_min": ttime_s},
+        "Predictions": {k: float(v) for k, v in preds.items()},
+        "Metallurgy": {"Y_T_Ratio": round(yt_ratio, 3), "Phase_at_HT": phase_at_ht, "Classification": grade}
+    }
+    col1, col2, col3 = st.columns([2,1,1])
+    with col3:
+        st.download_button(
+            label="📥 Download JSON Report",
+            data=json_lib.dumps(report_data, indent=2),
+            file_name=f"MAST_IQ_{plabel.replace(' ', '_')}_Report.json",
+            mime="application/json",
+            use_container_width=True,
+        )
 
     # Tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -1987,7 +1996,7 @@ else:
     # Tab 3: T-t Profile
     with tab3:
         st.plotly_chart(
-            build_tt_profile(pkey, ht_s, tt_s, sk_s, ttime_s),
+            build_tt_profile(pkey, ht_s, tt_s, sk_s, ttime_s, C=C_s, Mn=Mn_s, Cr=Cr_s, Mo=Mo_s),
             width='stretch',
         )
         st.caption("Schematic temperature-time profile (times scaled for illustration). "
