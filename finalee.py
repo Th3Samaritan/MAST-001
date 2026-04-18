@@ -254,47 +254,71 @@ header[data-testid="stHeader"] {{
 
 /* ══════ Buttons ══════ */
 .stButton > button[kind="primary"] {{
-    background: linear-gradient(135deg, var(--accent), var(--accent-cool)) !important;
+    background: var(--accent) !important;
     border: 1px solid var(--accent) !important;
     color: {('#0B0F19' if IS_DARK else '#FFFFFF')} !important;
     border-radius: 8px !important;
     font-family: 'Rajdhani', sans-serif !important;
     font-weight: 700 !important;
-    font-size: 0.92rem !important;
-    letter-spacing: 0.20em !important;
+    font-size: 0.94rem !important;
+    letter-spacing: 0.22em !important;
     text-transform: uppercase !important;
-    padding: 0.78rem 1.2rem !important;
-    transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.22s ease !important;
+    padding: 0.80rem 1.2rem !important;
+    transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.22s ease, background-color 0.22s ease !important;
     width: 100% !important;
     box-shadow: 0 4px 14px var(--accent-soft) !important;
 }}
 .stButton > button[kind="primary"]:hover {{
-    filter: brightness(1.08);
-    box-shadow: 0 6px 20px var(--accent-dim) !important;
+    filter: brightness(1.06);
+    box-shadow: 0 6px 18px var(--accent-dim) !important;
     transform: translateY(-1px);
 }}
-.stButton > button[kind="primary"]:active {{ transform: translateY(0); }}
+.stButton > button[kind="primary"]:active {{ transform: translateY(0); filter: brightness(0.96); }}
 
 .stButton > button[kind="secondary"] {{
-    background: transparent !important;
+    background: var(--bg-surface) !important;
     border: 1px solid var(--border) !important;
-    color: var(--fg-secondary) !important;
+    color: var(--fg-primary) !important;
     border-radius: 8px !important;
     font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 600 !important;
     letter-spacing: 0.14em !important;
     text-transform: uppercase !important;
 }}
 .stButton > button[kind="secondary"]:hover {{
     border-color: var(--accent) !important;
     color: var(--accent) !important;
+    background: var(--accent-soft) !important;
 }}
 
-/* ══════ Toggle switch (theme) ══════ */
-[data-testid="stToggle"] label[data-baseweb="checkbox"] {{
-    background: var(--bg-surface) !important;
+/* ══════ Compact theme toggle — targets button by Streamlit key ══════ */
+.st-key-miq_theme_toggle {{
+    display: flex !important;
+    justify-content: flex-end !important;
+    margin-top: 1.6rem !important;
+}}
+.st-key-miq_theme_toggle .stButton > button,
+.st-key-miq_theme_toggle button {{
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0.42rem 0.95rem !important;
     border-radius: 999px !important;
-    padding: 4px 10px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    background: var(--bg-surface) !important;
     border: 1px solid var(--border) !important;
+    color: var(--fg-secondary) !important;
+    box-shadow: var(--shadow) !important;
+    transition: all 0.25s ease !important;
+}}
+.st-key-miq_theme_toggle .stButton > button:hover,
+.st-key-miq_theme_toggle button:hover {{
+    color: var(--accent) !important;
+    border-color: var(--accent-dim) !important;
+    background: var(--accent-soft) !important;
+    transform: translateY(-1px) !important;
 }}
 
 /* ══════ Tabs ══════ */
@@ -2017,11 +2041,9 @@ setFrame(0);
 # ══════════════════════════════════════════════════════════════════════════════
 hdr_l, hdr_c, hdr_r = st.columns([1, 4, 1])
 with hdr_r:
-    st.write("")
     if st.button(("☾ DARK" if not IS_DARK else "☀ LIGHT"),
                  key="miq_theme_toggle",
                  type="secondary",
-                 use_container_width=True,
                  help="Toggle between dark and light theme"):
         st.session_state.miq_theme = "light" if IS_DARK else "dark"
         st.rerun()
@@ -2479,9 +2501,15 @@ else:
 
         if st.session_state.get("sim_ready"):
             sim_p = st.session_state.sim_params
-            with st.spinner("Building immersive simulation \u2014 this may take up to 20 s..."):
-                sim_html = build_immersive_simulation_html(*sim_p, theme_key=st.session_state.miq_theme)
-            components.html(sim_html, height=800, scrolling=False)
+            try:
+                with st.spinner("Building immersive simulation \u2014 this may take up to 20 s..."):
+                    sim_html = build_immersive_simulation_html(*sim_p, theme_key=st.session_state.miq_theme)
+                components.html(sim_html, height=800, scrolling=False)
+            except Exception as e:
+                import traceback
+                st.error(f"Simulation failed for process **{sim_p[0]}** \u2014 {type(e).__name__}: {e}")
+                with st.expander("Debug traceback", expanded=False):
+                    st.code(traceback.format_exc())
 
             _proc, _C, _ht, _soak, _cool, _tt, _ttime = sim_p
             Ms_v = max(80.0, 539 - 423*_C - 30.4*0.85 - 12.1*1.05 - 7.5*0.2)
