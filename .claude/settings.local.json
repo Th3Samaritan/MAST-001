@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import shap; print\\('shap', shap.__version__\\)\")",
+      "Bash(python -c \"from sklearn.model_selection import cross_val_score; print\\('sklearn OK'\\)\")",
+      "Bash(python -c \"from sklearn.model_selection import cross_val_score; print\\('sklearn OK'\\); from xgboost import XGBRegressor; print\\('xgboost OK'\\); import optuna; print\\('optuna OK'\\)\")"
+    ]
+  }
+}

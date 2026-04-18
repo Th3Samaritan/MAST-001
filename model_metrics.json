@@ -1,4 +1,6 @@
 {
+  "model_version": "v3",
+  "trained_at": "2026-04-17T12:30:54.237046",
   "features": [
     "C",
     "Si",
@@ -9,11 +11,14 @@
     "Cr",
     "Cu",
     "Mo",
+    "Fe",
     "Carbon_Equiv",
     "A3_Temp_C",
     "Delta_HT_A3",
     "Hollomon_Jaffe",
     "C_x_Cr",
+    "Cooling_Rate_Est",
+    "Total_Alloy",
     "HT_Temp_C",
     "Soaking_Time_min",
     "Tempering_Temp_C",
@@ -73,6 +78,10 @@
       "min": 0.0006,
       "max": 0.5999
     },
+    "Fe": {
+      "min": 92.0073,
+      "max": 98.4845
+    },
     "Carbon_Equiv": {
       "min": 0.4053791666666667,
       "max": 1.3596775
@@ -87,11 +96,19 @@
     },
     "Hollomon_Jaffe": {
       "min": 0.0,
-      "max": 17676.74387378848
+      "max": 17676.743873788484
     },
     "C_x_Cr": {
       "min": 0.0011560000000000001,
       "max": 1.0678910400000001
+    },
+    "Cooling_Rate_Est": {
+      "min": 0.1,
+      "max": 80.0
+    },
+    "Total_Alloy": {
+      "min": 1.4684,
+      "max": 7.9656
     },
     "HT_Temp_C": {
       "min": 154.5,
@@ -153,40 +170,148 @@
   "model_metrics": [
     {
       "Target": "Tensile_MPa",
-      "R\u00b2": 0.9879,
-      "MAE": 34.86,
-      "RMSE": 51.25,
-      "MAPE (%)": 4.27
+      "R\u00b2": 0.9883,
+      "Adj_R\u00b2": 0.9839,
+      "MAE": 35.45,
+      "RMSE": 50.36,
+      "MAPE (%)": 4.68,
+      "Best_Iter": 892
     },
     {
       "Target": "Yield_MPa",
-      "R\u00b2": 0.9775,
-      "MAE": 44.32,
-      "RMSE": 64.43,
-      "MAPE (%)": 7.34
+      "R\u00b2": 0.9789,
+      "Adj_R\u00b2": 0.971,
+      "MAE": 43.53,
+      "RMSE": 62.28,
+      "MAPE (%)": 7.28,
+      "Best_Iter": 705
     },
     {
       "Target": "Hardness_HB",
-      "R\u00b2": 0.986,
-      "MAE": 11.68,
-      "RMSE": 17.03,
-      "MAPE (%)": 4.58
+      "R\u00b2": 0.9865,
+      "Adj_R\u00b2": 0.9814,
+      "MAE": 11.11,
+      "RMSE": 16.71,
+      "MAPE (%)": 4.71,
+      "Best_Iter": 710
     },
     {
       "Target": "Elongation_pct",
-      "R\u00b2": 0.9748,
-      "MAE": 1.02,
-      "RMSE": 1.38,
-      "MAPE (%)": 3.74
+      "R\u00b2": 0.9762,
+      "Adj_R\u00b2": 0.9671,
+      "MAE": 0.98,
+      "RMSE": 1.34,
+      "MAPE (%)": 3.6,
+      "Best_Iter": 391
     },
     {
       "Target": "Fatigue_MPa",
-      "R\u00b2": 0.9692,
+      "R\u00b2": 0.9698,
+      "Adj_R\u00b2": 0.9584,
       "MAE": 27.31,
-      "RMSE": 37.65,
-      "MAPE (%)": 7.46
+      "RMSE": 37.29,
+      "MAPE (%)": 7.62,
+      "Best_Iter": 214
     }
   ],
+  "cv_metrics": [
+    {
+      "Target": "Tensile_MPa",
+      "CV_Mean_R\u00b2": 0.983,
+      "CV_Std_R\u00b2": 0.0082,
+      "CV_Min_R\u00b2": 0.9667,
+      "CV_Max_R\u00b2": 0.9887
+    },
+    {
+      "Target": "Yield_MPa",
+      "CV_Mean_R\u00b2": 0.9747,
+      "CV_Std_R\u00b2": 0.0102,
+      "CV_Min_R\u00b2": 0.9566,
+      "CV_Max_R\u00b2": 0.9877
+    },
+    {
+      "Target": "Hardness_HB",
+      "CV_Mean_R\u00b2": 0.9844,
+      "CV_Std_R\u00b2": 0.0053,
+      "CV_Min_R\u00b2": 0.9738,
+      "CV_Max_R\u00b2": 0.9879
+    },
+    {
+      "Target": "Elongation_pct",
+      "CV_Mean_R\u00b2": 0.9712,
+      "CV_Std_R\u00b2": 0.0032,
+      "CV_Min_R\u00b2": 0.9658,
+      "CV_Max_R\u00b2": 0.9754
+    },
+    {
+      "Target": "Fatigue_MPa",
+      "CV_Mean_R\u00b2": 0.9686,
+      "CV_Std_R\u00b2": 0.0118,
+      "CV_Min_R\u00b2": 0.9452,
+      "CV_Max_R\u00b2": 0.9754
+    }
+  ],
+  "best_params": {
+    "Tensile_MPa": {
+      "n_estimators": 902,
+      "max_depth": 3,
+      "learning_rate": 0.01905221886118553,
+      "subsample": 0.9957934543417556,
+      "colsample_bytree": 0.47829325577929566,
+      "min_child_weight": 5,
+      "gamma": 8.833721391110391,
+      "reg_alpha": 1.8487233225704112e-08,
+      "reg_lambda": 5.607533975836038e-06
+    },
+    "Yield_MPa": {
+      "n_estimators": 706,
+      "max_depth": 4,
+      "learning_rate": 0.014325882105309282,
+      "subsample": 0.7961768166579385,
+      "colsample_bytree": 0.6446976742536511,
+      "min_child_weight": 7,
+      "gamma": 9.138593788229722,
+      "reg_alpha": 0.037034628949295795,
+      "reg_lambda": 7.712505358380657e-08
+    },
+    "Hardness_HB": {
+      "n_estimators": 1199,
+      "max_depth": 3,
+      "learning_rate": 0.038846621164014175,
+      "subsample": 0.6882835342918535,
+      "colsample_bytree": 0.43039131597761354,
+      "min_child_weight": 13,
+      "gamma": 7.088683906838179,
+      "reg_alpha": 0.0013805761956659267,
+      "reg_lambda": 0.005197851319153182
+    },
+    "Elongation_pct": {
+      "n_estimators": 392,
+      "max_depth": 3,
+      "learning_rate": 0.0133897347378515,
+      "subsample": 0.7755547260013194,
+      "colsample_bytree": 0.5250108441800783,
+      "min_child_weight": 4,
+      "gamma": 8.786339949907317,
+      "reg_alpha": 1.1826503643248263e-07,
+      "reg_lambda": 2.109200215532876e-07
+    },
+    "Fatigue_MPa": {
+      "n_estimators": 1195,
+      "max_depth": 9,
+      "learning_rate": 0.038028248200235336,
+      "subsample": 0.56036575606442,
+      "colsample_bytree": 0.6166251665470142,
+      "min_child_weight": 7,
+      "gamma": 4.7306189853991345,
+      "reg_alpha": 4.551051144346751e-06,
+      "reg_lambda": 0.06739415440998742
+    }
+  },
   "n_train": 456,
-  "n_test": 114
+  "n_test": 114,
+  "n_features": 31,
+  "optuna_trials": 80,
+  "cv_folds": 5,
+  "early_stopping_rounds": 50
 }

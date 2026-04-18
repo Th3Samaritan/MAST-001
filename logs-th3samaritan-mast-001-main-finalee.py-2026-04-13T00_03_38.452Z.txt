@@ -1,0 +1,125 @@
+
+[     UTC     ] Logs for mast-steel.streamlit.app/
+────────────────────────────────────────────────────────────────────────────────────────
+[00:02:19] 🖥 Provisioning machine...
+[00:02:19] 🎛 Preparing system...
+[00:02:19] ⛓ Spinning up manager process...
+[00:02:21] 🚀 Starting up repository: 'mast-001', branch: 'main', main module: 'finalee.py'
+[00:02:21] 🐙 Cloning repository...
+[00:02:22] 🐙 Cloning into '/mount/src/mast-001'...
+
+[00:02:22] 🐙 Cloned repository!
+[00:02:22] 🐙 Pulling code changes from Github...
+[00:02:22] 📦 Processing dependencies...
+
+──────────────────────────────────────── uv ───────────────────────────────────────────
+
+Using uv pip install.
+Using Python 3.14.3 environment at /home/adminuser/venv
+Resolved 48 packages in 540ms
+Prepared 48 packages in 6.45s
+Installed 48 packages in 213ms
+ + altair==6.0.0
+ + attrs==26.1.0
+ + blinker==1.9.0
+ + cachetools==7.0.5
+ + certifi==2026.2.25
+ + charset-normalizer==3.4.7
+ + click==8.3.2
+ + contourpy==1.3.3
+ + cycler==0.12.1
+ + fonttools==4.62.1
+ + gitdb==4.0.12
+ + gitpython[2026-04-13 00:02:30.387034] ==3.1.46
+ + idna==3.11
+ + jinja2==3.1.6
+ +[2026-04-13 00:02:30.387333]  joblib==1.5.3
+ + jsonschema==4.26.0
+ + jsonschema-specifications==2025.9.1
+ + kiwisolver==1.5.0
+ + markupsafe==3.0.3
+ +[2026-04-13 00:02:30.387495]  matplotlib==3.10.8
+ + narwhals==2.19.0
+ + numpy==2.4.4
+ + nvidia-nccl-cu12==2.29.7
+ + packaging==26.0[2026-04-13 00:02:30.387631] 
+ + pandas==3.0.2
+ + pillow==12.2.0
+ + plotly==6.7.0
+ + protobuf==[2026-04-13 00:02:30.387745] 7.34.1
+ + pyarrow==23.0.1
+ + pydeck==0.9.1
+ + pyparsing==3.3.2
+ + python-dateutil==[2026-04-13 00:02:30.387835] 2.9.0.post0
+ + referencing==0.37.0
+ + requests==2.33.1
+ [2026-04-13 00:02:30.387927] + rpds-py==0.30.0
+ + scikit-learn==1.8.0
+ + scipy[2026-04-13 00:02:30.388025] ==1.17.1
+ + six==1.17.0
+ + smmap==5.0.3
+ + streamlit==1.56.0
+ + [2026-04-13 00:02:30.388156] tenacity==9.1.4
+ + threadpoolctl==3.6.0
+ + toml==0.10.2
+ + tornado==6.5.5
+ +[2026-04-13 00:02:30.388256]  typing-extensions==4.15.0
+ + urllib3==2.6.3
+ + watchdog==6.0.0
+ + xgboost==[2026-04-13 00:02:30.388349] 3.2.0
+Checking if Streamlit is installed
+Found Streamlit version 1.56.0 in the environment
+Installing rich for an improved exception logging
+Using uv pip install.
+Using Python 3.14.3 environment at /home/adminuser/venv
+Resolved 4 packages in 126ms
+Prepared 4 packages in 110ms
+Installed 4 packages in 13ms
+ + markdown-it-py==4.0.0
+ + mdurl==[2026-04-13 00:02:32.958913] 0.1.2
+ + pygments==2.20.0
+ + rich==15.0.0
+
+────────────────────────────────────────────────────────────────────────────────────────
+
+[00:02:33] 🐍 Python dependencies were installed from /mount/src/mast-001/requirements.txt using uv.
+Check if streamlit is installed
+Streamlit is already installed
+[00:02:34] 📦 Processed dependencies!
+
+
+
+2026-04-13 00:03:16.961 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+────────────────────── Traceback (most recent call last) ───────────────────────
+  /home/adminuser/venv/lib/python3.14/site-packages/streamlit/runtime/scriptru  
+  nner/exec_code.py:129 in exec_func_with_error_handling                        
+                                                                                
+  /home/adminuser/venv/lib/python3.14/site-packages/streamlit/runtime/scriptru  
+  nner/script_runner.py:689 in code_to_exec                                     
+                                                                                
+  /mount/src/mast-001/finalee.py:966 in <module>                                
+                                                                                
+     963 │   │   with c_r:                                                      
+     964 │   │   │   st.markdown(html_section_header("Performance Radar", "Nor  
+     965 │   │   │   │   │   │   unsafe_allow_html=True)                        
+  ❱  966 │   │   │   st.plotly_chart(build_radar(preds), use_container_width=T  
+     967 │   │   with c_s:                                                      
+     968 │   │   │   st.markdown(html_section_header("Numerical Results", "",   
+     969 │   │   │   │   │   │   unsafe_allow_html=True)                        
+                                                                                
+  /mount/src/mast-001/finalee.py:429 in build_radar                             
+                                                                                
+     426 │   │   line=dict(color="rgba(255,255,255,0.18)", width=1, dash="dot"  
+     427 │   │   name="Dataset avg.",                                           
+     428 │   ))                                                                 
+  ❱  429 │   fig.update_layout(                                                 
+     430 │   │   **_BASE,                                                       
+     431 │   │   polar=dict(                                                    
+     432 │   │   │   bgcolor="rgba(8,13,30,0.5)",                               
+────────────────────────────────────────────────────────────────────────────────
+TypeError: plotly.graph_objs._figure.Figure.update_layout() got multiple values 
+for keyword argument 'margin'
