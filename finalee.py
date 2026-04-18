@@ -33,72 +33,72 @@ st.set_page_config(
 
 THEMES = {
     "dark": {
-        "bg_base":      "#101114",
-        "bg_sink":      "#0A0B0D",
-        "bg_elev":      "#181A1E",
-        "bg_surface":   "rgba(24,26,30,0.86)",
-        "bg_surface_2": "rgba(30,32,37,0.62)",
-        "bg_glass":     "rgba(16,17,20,0.78)",
-        "border_dim":      "rgba(235,238,244,0.06)",
-        "border":          "rgba(235,238,244,0.12)",
-        "border_strong":   "rgba(235,238,244,0.22)",
-        "fg_primary":   "#EBEEF2",
-        "fg_secondary": "#9197A2",
-        "fg_muted":     "#5C626E",
-        "accent":       "#EBEEF2",
-        "accent_dim":   "rgba(235,238,244,0.45)",
-        "accent_soft":  "rgba(235,238,244,0.08)",
-        "accent_cool":  "#B8BEC8",
-        "accent_warn":  "#D4A056",
-        "accent_err":   "#C85858",
-        "accent_ok":    "#5FB58A",
-        "plot_bg":      "rgba(16,17,20,1)",
-        "plot_grid":    "rgba(235,238,244,0.06)",
-        "plot_text":    "#9197A2",
-        "canvas_bg":    "#101114",
-        "canvas_panel": "rgba(16,17,20,0.92)",
-        "canvas_grid":  "rgba(235,238,244,0.08)",
-        "canvas_text":  "rgba(235,238,244,0.62)",
-        "hero_a":       "#FFFFFF",
-        "hero_b":       "#C4C8D0",
-        "hero_c":       "#7A8090",
-        "shadow":       "0 4px 24px rgba(0,0,0,0.40)",
-        "app_grad":     "#101114",
-        "sidebar_grad": "#0E0F12",
-        "header_bg":    "rgba(16,17,20,0.88)",
+        "bg_base":      "#0A0A0A",
+        "bg_sink":      "#000000",
+        "bg_elev":      "#141414",
+        "bg_surface":   "#161616",
+        "bg_surface_2": "#1C1C1C",
+        "bg_glass":     "rgba(10,10,10,0.80)",
+        "border_dim":      "rgba(255,255,255,0.06)",
+        "border":          "rgba(255,255,255,0.10)",
+        "border_strong":   "rgba(255,255,255,0.20)",
+        "fg_primary":   "#FAFAFA",
+        "fg_secondary": "#A3A3A3",
+        "fg_muted":     "#6B6B6B",
+        "accent":       "#3B82F6",
+        "accent_dim":   "rgba(59,130,246,0.55)",
+        "accent_soft":  "rgba(59,130,246,0.12)",
+        "accent_cool":  "#60A5FA",
+        "accent_warn":  "#F59E0B",
+        "accent_err":   "#EF4444",
+        "accent_ok":    "#10B981",
+        "plot_bg":      "rgba(10,10,10,1)",
+        "plot_grid":    "rgba(255,255,255,0.06)",
+        "plot_text":    "#A3A3A3",
+        "canvas_bg":    "#0A0A0A",
+        "canvas_panel": "rgba(20,20,20,0.94)",
+        "canvas_grid":  "rgba(255,255,255,0.06)",
+        "canvas_text":  "rgba(250,250,250,0.72)",
+        "hero_a":       "#FAFAFA",
+        "hero_b":       "#FAFAFA",
+        "hero_c":       "#FAFAFA",
+        "shadow":       "0 1px 2px rgba(0,0,0,0.30), 0 4px 16px rgba(0,0,0,0.20)",
+        "app_grad":     "#0A0A0A",
+        "sidebar_grad": "#0A0A0A",
+        "header_bg":    "rgba(10,10,10,0.88)",
     },
     "light": {
-        "bg_base":      "#F6F7F8",
-        "bg_sink":      "#EDEEF0",
+        "bg_base":      "#FAFAFA",
+        "bg_sink":      "#F5F5F5",
         "bg_elev":      "#FFFFFF",
-        "bg_surface":   "rgba(255,255,255,0.94)",
-        "bg_surface_2": "rgba(248,249,251,0.88)",
+        "bg_surface":   "#FFFFFF",
+        "bg_surface_2": "#F9F9F9",
         "bg_glass":     "rgba(255,255,255,0.82)",
-        "border_dim":      "rgba(21,23,28,0.06)",
-        "border":          "rgba(21,23,28,0.12)",
-        "border_strong":   "rgba(21,23,28,0.22)",
-        "fg_primary":   "#15171C",
-        "fg_secondary": "#525866",
-        "fg_muted":     "#8A91A0",
-        "accent":       "#15171C",
-        "accent_dim":   "rgba(21,23,28,0.45)",
-        "accent_soft":  "rgba(21,23,28,0.06)",
-        "accent_cool":  "#525866",
-        "accent_warn":  "#A66A18",
-        "accent_err":   "#A63838",
-        "accent_ok":    "#2E7E54",
+        "border_dim":      "rgba(0,0,0,0.06)",
+        "border":          "rgba(0,0,0,0.10)",
+        "border_strong":   "rgba(0,0,0,0.20)",
+        "fg_primary":   "#0A0A0A",
+        "fg_secondary": "#525252",
+        "fg_muted":     "#A3A3A3",
+        "accent":       "#2563EB",
+        "accent_dim":   "rgba(37,99,235,0.55)",
+        "accent_soft":  "rgba(37,99,235,0.10)",
+        "accent_cool":  "#3B82F6",
+        "accent_warn":  "#D97706",
+        "accent_err":   "#DC2626",
+        "accent_ok":    "#059669",
         "plot_bg":      "rgba(255,255,255,1)",
-        "plot_grid":    "rgba(21,23,28,0.08)",
-        "plot_text":    "#525866",
+        "plot_grid":    "rgba(0,0,0,0.06)",
+        "plot_text":    "#525252",
         "canvas_bg":    "#FFFFFF",
         "canvas_panel": "rgba(255,255,255,0.96)",
-        "canvas_grid":  "rgba(21,23,28,0.10)",
-        "canvas_text":  "rgba(21,23,28,0.72)",
-        "hero_a":       "#15171C",
-        "hero_b":       "#3A3F4A",
-        "hero_c":       "#7A8090",
-        "shadow":       "0 2px 14px rgba(21,23,28,0.08)",
-        "app_grad":     "#F6F7F8",
+        "canvas_grid":  "rgba(0,0,0,0.08)",
+        "canvas_text":  "rgba(10,10,10,0.72)",
+        "hero_a":       "#0A0A0A",
+        "hero_b":       "#0A0A0A",
+        "hero_c":       "#0A0A0A",
+        "shadow":       "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)",
+        "app_grad":     "#FAFAFA",
         "sidebar_grad": "#FFFFFF",
         "header_bg":    "rgba(255,255,255,0.90)",
     },
@@ -112,7 +112,7 @@ IS_DARK = (st.session_state.miq_theme == "dark")
 
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {{
     --bg-base:        {T['bg_base']};
@@ -181,31 +181,28 @@ header[data-testid="stHeader"] {{
 [data-testid="stSidebar"] {{
     background: {T['sidebar_grad']} !important;
     border-right: 1px solid var(--border-dim) !important;
-    box-shadow: {T['shadow']};
+    box-shadow: none !important;
 }}
-[data-testid="stSidebar"]::before {{
-    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
-}}
-[data-testid="stSidebar"] .block-container {{ padding: 1rem 0.95rem !important; }}
+[data-testid="stSidebar"] .block-container {{ padding: 1.1rem 1.05rem !important; }}
 [data-testid="stSidebar"] label, [data-testid="stSidebar"] p,
 [data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] .stMarkdown {{
     color: var(--fg-secondary) !important;
 }}
-[data-testid="stSidebar"] [data-baseweb="form-control-counter"],
 [data-testid="stSidebar"] label {{
-    font-size: 0.71rem !important;
-    letter-spacing: 0.10em !important;
-    text-transform: uppercase !important;
+    font-size: 0.74rem !important;
     font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: var(--fg-secondary) !important;
 }}
 [data-testid="stSidebar"] strong {{
     color: var(--fg-primary) !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.12em !important;
+    font-weight: 600 !important;
     font-size: 0.78rem !important;
-    text-transform: uppercase !important;
+    letter-spacing: -0.005em !important;
+    text-transform: none !important;
+    display: inline-block;
+    margin-top: 4px;
 }}
 
 /* ══════ Inputs ══════ */
@@ -220,7 +217,7 @@ header[data-testid="stHeader"] {{
 .stNumberInput input:focus, .stTextInput input:focus,
 .stSelectbox > div > div:focus-within {{
     border-color: var(--accent) !important;
-    box-shadow: 0 0 0 2px var(--accent-soft) !important;
+    box-shadow: 0 0 0 3px var(--accent-soft) !important;
     outline: none !important;
 }}
 .stNumberInput button {{
@@ -236,41 +233,42 @@ header[data-testid="stHeader"] {{
 /* ══════ Sliders ══════ */
 [data-testid="stSlider"] > div > div > div > div {{
     background: var(--accent) !important;
-    height: 3px !important;
+    height: 2px !important;
 }}
 [data-testid="stSlider"] [role="slider"] {{
-    background: var(--bg-elev) !important;
-    border: 2px solid var(--accent) !important;
-    box-shadow: 0 0 0 4px var(--accent-soft) !important;
-    width: 16px !important; height: 16px !important;
+    background: var(--accent) !important;
+    border: 2px solid {('#0A0A0A' if IS_DARK else '#FFFFFF')} !important;
+    box-shadow: 0 0 0 1px var(--accent) !important;
+    width: 14px !important; height: 14px !important;
 }}
 [data-testid="stSlider"] p {{
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.76rem !important;
-    color: var(--accent) !important;
+    font-size: 0.75rem !important;
+    color: var(--fg-primary) !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
+    font-weight: 500 !important;
 }}
 
 /* ══════ Buttons ══════ */
 .stButton > button[kind="primary"] {{
     background: var(--accent) !important;
     border: 1px solid var(--accent) !important;
-    color: {('#101114' if IS_DARK else '#FFFFFF')} !important;
+    color: #FFFFFF !important;
     border-radius: 8px !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.94rem !important;
-    letter-spacing: 0.22em !important;
-    text-transform: uppercase !important;
-    padding: 0.80rem 1.2rem !important;
-    transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.22s ease, background-color 0.22s ease !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    letter-spacing: 0.01em !important;
+    text-transform: none !important;
+    padding: 0.72rem 1.2rem !important;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease !important;
     width: 100% !important;
-    box-shadow: {('0 4px 14px rgba(0,0,0,0.35)' if IS_DARK else '0 4px 14px rgba(21,23,28,0.18)')} !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important;
 }}
 .stButton > button[kind="primary"]:hover {{
-    filter: {('brightness(0.94)' if IS_DARK else 'brightness(1.18)')};
-    box-shadow: {('0 6px 18px rgba(0,0,0,0.45)' if IS_DARK else '0 6px 18px rgba(21,23,28,0.28)')} !important;
+    filter: brightness(1.08);
+    box-shadow: 0 4px 12px var(--accent-soft) !important;
     transform: translateY(-1px);
 }}
 .stButton > button[kind="primary"]:active {{ transform: translateY(0); filter: brightness(0.96); }}
@@ -280,55 +278,61 @@ header[data-testid="stHeader"] {{
     border: 1px solid var(--border) !important;
     color: var(--fg-primary) !important;
     border-radius: 8px !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.14em !important;
-    text-transform: uppercase !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.84rem !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
 }}
 .stButton > button[kind="secondary"]:hover {{
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
-    background: var(--accent-soft) !important;
+    border-color: var(--border-strong) !important;
+    color: var(--fg-primary) !important;
+    background: var(--bg-surface-2) !important;
 }}
 
-/* ══════ Compact theme toggle — targets button by Streamlit key ══════ */
+/* ══════ Theme toggle — icon button ══════ */
 .st-key-miq_theme_toggle {{
     display: flex !important;
     justify-content: flex-end !important;
-    margin-top: 1.6rem !important;
+    align-items: center !important;
+    height: 100% !important;
 }}
 .st-key-miq_theme_toggle .stButton > button,
 .st-key-miq_theme_toggle button {{
-    width: auto !important;
+    width: 36px !important;
+    height: 36px !important;
     min-width: 0 !important;
-    padding: 0.42rem 0.95rem !important;
-    border-radius: 999px !important;
-    font-size: 0.72rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.18em !important;
-    text-transform: uppercase !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
     background: var(--bg-surface) !important;
     border: 1px solid var(--border) !important;
     color: var(--fg-secondary) !important;
-    box-shadow: var(--shadow) !important;
-    transition: all 0.25s ease !important;
+    box-shadow: none !important;
+    transition: all 0.15s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }}
 .st-key-miq_theme_toggle .stButton > button:hover,
 .st-key-miq_theme_toggle button:hover {{
-    color: var(--accent) !important;
-    border-color: var(--accent-dim) !important;
-    background: var(--accent-soft) !important;
-    transform: translateY(-1px) !important;
+    color: var(--fg-primary) !important;
+    border-color: var(--border-strong) !important;
+    background: var(--bg-surface-2) !important;
+    transform: none !important;
 }}
 
-/* ══════ Tabs ══════ */
+/* ══════ Tabs — clean underline style ══════ */
 .stTabs [data-baseweb="tab-list"] {{
     background: transparent !important;
     border: none !important;
     border-bottom: 1px solid var(--border-dim) !important;
     border-radius: 0 !important;
     padding: 0 !important;
-    gap: 0 !important;
+    gap: 4px !important;
     overflow-x: auto !important;
     flex-wrap: nowrap !important;
     -webkit-overflow-scrolling: touch !important;
@@ -338,21 +342,22 @@ header[data-testid="stHeader"] {{
 .stTabs [data-baseweb="tab"] {{
     border-radius: 0 !important;
     background: transparent !important;
-    color: var(--fg-muted) !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 600 !important;
+    color: var(--fg-secondary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
     font-size: 0.86rem !important;
-    letter-spacing: 0.14em !important;
-    text-transform: uppercase !important;
-    padding: 0.72rem 1.20rem !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    padding: 0.75rem 1.0rem !important;
     white-space: nowrap !important;
     border-bottom: 2px solid transparent !important;
-    transition: all 0.18s !important;
+    margin-bottom: -1px !important;
+    transition: all 0.15s !important;
     flex-shrink: 0 !important;
 }}
 .stTabs [data-baseweb="tab"]:hover {{ color: var(--fg-primary) !important; }}
 .stTabs [data-baseweb="tab"][aria-selected="true"] {{
-    color: var(--accent) !important;
+    color: var(--fg-primary) !important;
     border-bottom: 2px solid var(--accent) !important;
     box-shadow: none !important;
 }}
@@ -467,30 +472,33 @@ div[data-testid="stAlert"] p {{ color: var(--fg-secondary) !important; }}
 .miq-card {{
     background: var(--bg-surface);
     border: 1px solid var(--border-dim);
-    border-radius: 12px;
-    padding: 16px 18px;
-    box-shadow: var(--shadow);
+    border-radius: 10px;
+    padding: 18px 20px;
+    box-shadow: none;
+    transition: border-color 0.15s ease;
+}}
+.miq-card:hover {{
+    border-color: var(--border);
 }}
 
 .miq-cards {{
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
     margin: 0 0 16px;
 }}
 
 .miq-pill {{
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 12px;
-    border-radius: 999px;
+    padding: 4px 11px;
+    border-radius: 6px;
     background: var(--accent-soft);
     border: 1px solid var(--accent-dim);
     color: var(--accent);
-    font-size: 0.71rem;
-    font-weight: 600;
-    letter-spacing: 0.10em;
-    text-transform: uppercase;
-    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    font-family: 'Inter', sans-serif;
 }}
 
 .miq-hint {{
@@ -575,50 +583,54 @@ div[data-testid="stAlert"] p {{ color: var(--fg-secondary) !important; }}
 # ══════════════════════════════════════════════════════════════════════════════
 
 def html_metric_card(title, value, unit, color, icon, subtitle=""):
-    sub = (f'<div style="font-size:0.66rem;color:var(--fg-muted);margin-top:3px;">'
+    sub = (f'<div style="font-size:0.70rem;color:var(--fg-muted);margin-top:4px;">'
            f'{subtitle}</div>') if subtitle else ""
     return (
-        f'<div class="miq-card" style="border-top:3px solid {color};'
-        f'padding:16px 12px 14px;text-align:center;">'
-        f'<div style="font-size:1.35rem;margin-bottom:5px;line-height:1;">{icon}</div>'
-        f'<div style="font-size:2.05rem;font-weight:700;color:{color};'
-        f'font-family:\'Rajdhani\',sans-serif;line-height:1.0;">{value}</div>'
-        f'<div style="font-size:0.62rem;color:var(--fg-secondary);text-transform:uppercase;'
-        f'letter-spacing:0.16em;margin-top:6px;font-weight:600;">{title}</div>'
-        f'<div style="font-size:0.68rem;color:var(--fg-muted);margin-top:2px;">{unit}</div>'
+        f'<div class="miq-card" style="padding:18px 16px 16px;text-align:left;'
+        f'border-left:2px solid {color};">'
+        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
+        f'<span style="font-size:0.95rem;opacity:0.85;">{icon}</span>'
+        f'<span style="font-size:0.68rem;color:var(--fg-secondary);'
+        f'letter-spacing:0.02em;font-weight:500;">{title}</span></div>'
+        f'<div style="font-size:1.85rem;font-weight:600;color:var(--fg-primary);'
+        f'font-family:\'Inter\',sans-serif;line-height:1.1;letter-spacing:-0.02em;'
+        f'font-variant-numeric:tabular-nums;">{value}</div>'
+        f'<div style="font-size:0.72rem;color:var(--fg-muted);margin-top:4px;'
+        f'font-family:\'JetBrains Mono\',monospace;">{unit}</div>'
         f'{sub}</div>'
     )
 
 
 def html_section_header(title, subtitle="", icon=""):
-    sub = (f'<p style="color:var(--fg-secondary);font-size:0.82rem;margin:0 0 0 2.0rem;">'
-           f'{subtitle}</p>') if subtitle else ""
+    sub = (f'<p style="color:var(--fg-secondary);font-size:0.82rem;margin:4px 0 0 0;'
+           f'font-weight:400;">{subtitle}</p>') if subtitle else ""
+    icon_html = (f'<span style="font-size:1.05rem;opacity:0.85;margin-right:8px;">{icon}</span>'
+                 if icon else '')
     return (
-        f'<div style="margin:0 0 16px 0;">'
-        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:3px;">'
-        f'<span style="font-size:1.25rem;">{icon}</span>'
-        f'<span style="font-family:\'Rajdhani\',sans-serif;font-size:1.32rem;'
-        f'font-weight:700;color:var(--fg-primary);letter-spacing:0.04em;">{title}</span>'
+        f'<div style="margin:0 0 18px 0;">'
+        f'<div style="display:flex;align-items:center;">{icon_html}'
+        f'<span style="font-family:\'Inter\',sans-serif;font-size:1.10rem;'
+        f'font-weight:600;color:var(--fg-primary);letter-spacing:-0.01em;">{title}</span>'
         f'</div>{sub}</div>'
     )
 
 
 def html_badge(text, color):
-    return (f'<span style="display:inline-block;padding:3px 11px;border-radius:999px;'
-            f'background:{color}22;border:1px solid {color}55;color:{color};'
-            f'font-size:0.71rem;font-weight:600;letter-spacing:0.08em;'
-            f'text-transform:uppercase;">{text}</span>')
+    return (f'<span style="display:inline-block;padding:3px 10px;border-radius:6px;'
+            f'background:{color}1A;border:1px solid {color}40;color:{color};'
+            f'font-size:0.70rem;font-weight:500;letter-spacing:0.02em;'
+            f'font-family:\'Inter\',sans-serif;">{text}</span>')
 
 
 def html_process_card(proc, color, icon, desc):
     return (
-        f'<div class="miq-card" style="border-left:3px solid {color};margin-bottom:6px;'
+        f'<div class="miq-card" style="border-left:2px solid {color};margin-bottom:8px;'
         f'padding:14px 16px;">'
         f'<div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">'
-        f'<span style="font-size:1.10rem;">{icon}</span>'
-        f'<span style="font-family:\'Rajdhani\',sans-serif;font-size:1.05rem;'
-        f'font-weight:700;color:{color};letter-spacing:0.04em;">{proc}</span></div>'
-        f'<div style="font-size:0.76rem;color:var(--fg-secondary);line-height:1.5;">{desc}</div></div>'
+        f'<span style="font-size:1.0rem;opacity:0.85;">{icon}</span>'
+        f'<span style="font-family:\'Inter\',sans-serif;font-size:0.92rem;'
+        f'font-weight:600;color:var(--fg-primary);letter-spacing:-0.01em;">{proc}</span></div>'
+        f'<div style="font-size:0.78rem;color:var(--fg-secondary);line-height:1.55;">{desc}</div></div>'
     )
 
 
@@ -806,7 +818,7 @@ def build_gauges(preds):
         fig.add_trace(go.Indicator(
             mode="gauge+number",
             value=val,
-            number=dict(font=dict(size=22, color=col, family="Rajdhani, sans-serif"),
+            number=dict(font=dict(size=22, color=col, family="Inter, sans-serif"),
                         suffix=f" {unit}"),
             title=dict(text=f"<b>{label}</b>", font=dict(size=9, color=_PLOT_TEXT)),
             gauge=dict(
@@ -1336,7 +1348,7 @@ cx.fillStyle='#ffd700';cx.save();cx.translate(cX(CE),tY(A1));cx.rotate(Math.PI/4
 cx.fillStyle='rgba(255,215,0,0.6)';cx.font='9px sans-serif';cx.textAlign='left';cx.fillText('S (Eutectoid)',cX(CE)+10,tY(A1)+3);
 cx.fillStyle='#60c4ff';cx.beginPath();cx.moveTo(cX(CP),tY(PER)-4);cx.lineTo(cX(CP)-4,tY(PER)+4);cx.lineTo(cX(CP)+4,tY(PER)+4);cx.fill();
 cx.fillStyle='rgba(96,196,255,0.6)';cx.fillText('P (Peritectic)',cX(CP)+10,tY(PER)+3);
-cx.fillStyle=CFG.theme.fg;cx.font='bold 13px Rajdhani,sans-serif';cx.textAlign='center';
+cx.fillStyle=CFG.theme.fg;cx.font='600 13px Inter,sans-serif';cx.textAlign='center';
 cx.fillText('Fe\u2013C Phase Diagram  \u00b7  '+CFG.opPh,W/2,20);
 cx.fillStyle=CFG.theme.fgSec;cx.font='10px sans-serif';
 cx.fillText('Hover to explore phases  \u00b7  C='+CFG.C.toFixed(2)+'%  T='+CFG.htT.toFixed(0)+'\u00b0C',W/2,MT-5);
@@ -1943,14 +1955,14 @@ body{background:transparent;overflow:hidden;font-family:Inter,-apple-system,sans
 #w{position:relative;width:100%;height:780px;display:flex;flex-direction:column}
 #top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;
 background:var(--miq-panel,rgba(6,10,22,0.90));border:1px solid var(--miq-border,rgba(160,185,220,0.12));border-radius:8px;margin-bottom:6px}
-#stage{font-weight:700;font-size:15px;color:var(--miq-stage,#c9a56b);font-family:Rajdhani,sans-serif;letter-spacing:0.08em;text-transform:uppercase}
+#stage{font-weight:600;font-size:13px;color:var(--miq-stage,#3B82F6);font-family:'Inter',sans-serif;letter-spacing:0.02em}
 #tval{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--miq-tval,#e08030)}
 #tunit{font-size:11px;color:var(--miq-fgsec,rgba(170,190,220,0.6));margin-left:2px}
 #panels{display:flex;flex:1;gap:6px;min-height:0}
 .panel{flex:1;background:var(--miq-panel,rgba(6,10,22,0.60));border:1px solid var(--miq-border,rgba(160,185,220,0.10));
 border-radius:8px;position:relative;overflow:hidden;display:flex;flex-direction:column}
-.ptitle{font-size:11px;font-weight:600;color:var(--miq-fgsec,rgba(170,190,220,0.65));text-transform:uppercase;
-letter-spacing:0.12em;padding:8px 12px 4px;font-family:Rajdhani,sans-serif}
+.ptitle{font-size:11px;font-weight:500;color:var(--miq-fgsec,rgba(170,190,220,0.65));
+letter-spacing:0;padding:10px 12px 6px;font-family:'Inter',sans-serif}
 canvas,#mimg{display:block;width:100%;flex:1;min-height:0;object-fit:contain;border-radius:0 0 7px 7px}
 #phbar{display:flex;height:18px;border-radius:4px;overflow:hidden;margin:0 10px 8px}
 .phseg{height:100%;transition:width 0.3s}
@@ -2113,27 +2125,23 @@ setFrame(0);
 # ══════════════════════════════════════════════════════════════════════════════
 #  HEADER  —  brand wordmark + theme toggle
 # ══════════════════════════════════════════════════════════════════════════════
-hdr_l, hdr_c, hdr_r = st.columns([1, 4, 1])
+hdr_l, hdr_c, hdr_r = st.columns([1, 5, 1])
 with hdr_r:
-    if st.button(("☾ DARK" if not IS_DARK else "☀ LIGHT"),
+    if st.button(("🌙" if not IS_DARK else "☀"),
                  key="miq_theme_toggle",
                  type="secondary",
-                 help="Toggle between dark and light theme"):
+                 help="Switch theme"):
         st.session_state.miq_theme = "light" if IS_DARK else "dark"
         st.rerun()
 with hdr_c:
     st.markdown(
-        f'<div style="text-align:center;padding:1.6rem 0 0.8rem;">'
-        f'<div class="miq-hero-title" style="font-family:\'Rajdhani\',sans-serif;font-size:3.6rem;'
-        f'font-weight:700;background:linear-gradient(135deg,{T["hero_a"]} 0%,{T["hero_b"]} 45%,{T["hero_c"]} 100%);'
-        f'-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;'
-        f'letter-spacing:0.08em;line-height:1;">MAST&nbsp;IQ</div>'
-        f'<div class="miq-hero-sub" style="color:var(--fg-secondary);font-size:0.84rem;'
-        f'letter-spacing:0.28em;text-transform:uppercase;margin-top:8px;font-weight:500;">'
-        f'Alloy Intelligence Platform &nbsp;&middot;&nbsp; mast lab</div>'
-        f'<div style="width:140px;height:2px;'
-        f'background:linear-gradient(90deg,transparent,{T["accent"]},{T["accent_cool"]},transparent);'
-        f'margin:14px auto 0;border-radius:2px;"></div>'
+        f'<div style="display:flex;flex-direction:column;align-items:center;padding:1.4rem 0 1.2rem;">'
+        f'<div class="miq-hero-title" style="font-family:\'Inter\',sans-serif;font-size:2.4rem;'
+        f'font-weight:700;color:var(--fg-primary);letter-spacing:-0.02em;line-height:1;">'
+        f'MAST&nbsp;IQ</div>'
+        f'<div class="miq-hero-sub" style="color:var(--fg-secondary);font-size:0.82rem;'
+        f'letter-spacing:0;text-transform:none;margin-top:6px;font-weight:400;">'
+        f'Alloy intelligence platform for steel heat-treatment</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -2144,17 +2152,18 @@ with hdr_c:
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown(
-        f'<div style="text-align:center;padding:4px 0 12px;">'
-        f'<span style="font-family:\'Rajdhani\',sans-serif;font-size:1.20rem;'
-        f'font-weight:700;background:linear-gradient(90deg,{T["accent"]},{T["accent_cool"]});'
-        f'-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;'
-        f'letter-spacing:0.18em;">INPUT&nbsp;PARAMETERS</span>'
+        f'<div style="padding:4px 0 14px;">'
+        f'<div style="font-family:\'Inter\',sans-serif;font-size:0.68rem;'
+        f'font-weight:500;color:var(--fg-muted);letter-spacing:0.10em;'
+        f'text-transform:uppercase;margin-bottom:2px;">Configuration</div>'
+        f'<div style="font-family:\'Inter\',sans-serif;font-size:1.0rem;'
+        f'font-weight:600;color:var(--fg-primary);letter-spacing:-0.01em;">Input Parameters</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
 
     st.markdown("---")
-    st.markdown("**PROCESS TYPE**")
+    st.markdown("**Process Type**")
     PROCESS_MAP = {
         "Quench & Temper": "Quench_Temper",
         "Normalizing":     "Normalizing",
@@ -2168,7 +2177,7 @@ with st.sidebar:
     process_key = PROCESS_MAP[process_label]
 
     st.markdown("---")
-    st.markdown("**CHEMICAL COMPOSITION (wt%)**")
+    st.markdown("**Chemical Composition** (wt%)")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -2258,7 +2267,7 @@ with st.sidebar:
             st.success(f"OK {ht_temp}C < A1 (723C) - no phase change")
 
     st.markdown("---")
-    predict_btn = st.button("PREDICT PROPERTIES", type="primary", use_container_width=True)
+    predict_btn = st.button("Predict Properties", type="primary", use_container_width=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2321,28 +2330,31 @@ if not st.session_state.show_results:
     st.markdown("---")
     st.markdown(
         html_section_header("How to use MAST IQ",
-                             "Select process  ·  Enter composition  ·  Set parameters  ·  Click PREDICT",
+                             "Select process · Enter composition · Set parameters · Predict",
                              "📖"),
         unsafe_allow_html=True,
     )
     c1, c2, c3 = st.columns(3)
     for col, num, ttl, body in [
-        (c1, "01", "SELECT PROCESS",
+        (c1, "01", "Select process",
          "Choose a heat treatment method from the sidebar. The input form adapts automatically "
          "to show relevant parameters for that process."),
-        (c2, "02", "ENTER COMPOSITION",
+        (c2, "02", "Enter composition",
          "Input alloy chemistry in wt%. A3 temperature and carbon equivalent are computed "
          "live as metallurgical guidance."),
-        (c3, "03", "PREDICT AND EXPLORE",
-         "Click PREDICT PROPERTIES to get Tensile, Yield, Hardness, Elongation and Fatigue "
+        (c3, "03", "Predict and explore",
+         "Click Predict Properties to get Tensile, Yield, Hardness, Elongation and Fatigue "
          "predictions with interactive charts and a live phase and microstructure animation."),
     ]:
         with col:
             st.markdown(
-                f'<div class="miq-card" style="padding:18px 18px;height:100%;">'
-                f'<div style="font-family:\'Rajdhani\',sans-serif;font-size:1.05rem;'
-                f'color:var(--accent);font-weight:700;letter-spacing:0.10em;margin-bottom:8px;">'
-                f'{num} &mdash; {ttl}</div>'
+                f'<div class="miq-card" style="padding:20px 20px;height:100%;">'
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.72rem;'
+                f'color:var(--accent);font-weight:500;letter-spacing:0.02em;margin-bottom:10px;">'
+                f'{num}</div>'
+                f'<div style="font-family:\'Inter\',sans-serif;font-size:0.95rem;'
+                f'font-weight:600;color:var(--fg-primary);letter-spacing:-0.01em;margin-bottom:8px;">'
+                f'{ttl}</div>'
                 f'<div style="font-size:0.80rem;color:var(--fg-secondary);line-height:1.55;">{body}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
@@ -2354,7 +2366,7 @@ if not st.session_state.show_results:
 else:
     snap = st.session_state.snap
     if snap is None:
-        st.warning("No prediction found. Click **PREDICT PROPERTIES** in the sidebar.")
+        st.warning("No prediction found. Click **Predict Properties** in the sidebar.")
         st.stop()
 
     # Unpack snapshot
@@ -2392,25 +2404,28 @@ else:
     yt_warn = "Warning" if yt_ratio > 0.90 else "Good"
 
     st.markdown(
-        f'<div class="miq-card" style="background:linear-gradient(135deg,{pc}1a,var(--bg-surface));'
-        f'border-left:4px solid {pc};margin-bottom:18px;'
-        f'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">'
-        f'<div>'
-        f'<span style="font-family:\'Rajdhani\',sans-serif;font-size:1.30rem;font-weight:700;color:{pc};letter-spacing:0.04em;">'
-        f'{plabel}</span>'
-        f'<span style="font-size:0.78rem;color:var(--fg-secondary);margin-left:14px;">'
-        f'{ht_s:.0f}\u00b0C &nbsp;&middot;&nbsp; {sk_s:.0f}\u202fmin &nbsp;&middot;&nbsp; {cool_s}{temper_str}</span>'
+        f'<div class="miq-card" style="border-left:2px solid {pc};margin-bottom:18px;'
+        f'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">'
+        f'<div style="display:flex;flex-direction:column;">'
+        f'<span style="font-family:\'Inter\',sans-serif;font-size:1.05rem;font-weight:600;'
+        f'color:var(--fg-primary);letter-spacing:-0.01em;">{plabel}</span>'
+        f'<span style="font-size:0.76rem;color:var(--fg-secondary);margin-top:4px;'
+        f'font-family:\'JetBrains Mono\',monospace;">'
+        f'{ht_s:.0f}\u00b0C · {sk_s:.0f}\u202fmin · {cool_s}{temper_str}</span>'
         f'</div>'
         f'<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">'
-        f'<div style="display:flex;flex-direction:column;align-items:flex-end;margin-right:6px;">'
-        f'<span style="font-size:0.65rem;letter-spacing:0.10em;color:var(--fg-muted);text-transform:uppercase;">Y/T Ratio</span>'
-        f'<span style="font-family:\'Rajdhani\',sans-serif;font-size:1.0rem;font-weight:700;color:{yt_color};">{yt_ratio:.2f} '
-        f'<span style="font-size:0.72rem;font-family:\'Inter\',sans-serif;font-weight:500;">({yt_warn})</span></span>'
+        f'<div style="display:flex;flex-direction:column;align-items:flex-end;margin-right:4px;">'
+        f'<span style="font-size:0.66rem;color:var(--fg-muted);font-weight:500;">Y/T Ratio</span>'
+        f'<span style="font-family:\'Inter\',sans-serif;font-size:0.95rem;font-weight:600;'
+        f'color:{yt_color};font-variant-numeric:tabular-nums;margin-top:2px;">{yt_ratio:.2f} '
+        f'<span style="font-size:0.70rem;font-weight:400;color:var(--fg-muted);">({yt_warn})</span></span>'
         f'</div>'
-        f'<span style="background:{gcol}22;border:1px solid {gcol}50;color:{gcol};'
-        f'border-radius:20px;padding:3px 11px;font-size:0.73rem;font-weight:600;">{grade}</span>'
-        f'<span style="background:{phase_color}22;border:1px solid {phase_color}50;color:{phase_color};'
-        f'border-radius:20px;padding:3px 11px;font-size:0.73rem;font-weight:600;">{phase_at_ht}</span>'
+        f'<span style="background:{gcol}1A;border:1px solid {gcol}40;color:{gcol};'
+        f'border-radius:6px;padding:4px 10px;font-size:0.72rem;font-weight:500;'
+        f'font-family:\'Inter\',sans-serif;">{grade}</span>'
+        f'<span style="background:{phase_color}1A;border:1px solid {phase_color}40;color:{phase_color};'
+        f'border-radius:6px;padding:4px 10px;font-size:0.72rem;font-weight:500;'
+        f'font-family:\'Inter\',sans-serif;">{phase_at_ht}</span>'
         f'</div>'
         f'</div>',
         unsafe_allow_html=True,
