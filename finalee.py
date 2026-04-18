@@ -369,10 +369,77 @@ header[data-testid="stHeader"] {{
 }}
 
 /* ══════ DataFrame ══════ */
-.stDataFrame {{
+.stDataFrame, [data-testid="stDataFrame"], [data-testid="stTable"] {{
     border-radius: 8px !important;
     overflow: hidden !important;
     border: 1px solid var(--border-dim) !important;
+    color: var(--fg-primary) !important;
+}}
+[data-testid="stDataFrame"] [data-testid="stStyledFullScreenButton"] {{
+    color: var(--fg-secondary) !important;
+}}
+
+/* ══════ Markdown text, captions, code ══════ */
+.main .stMarkdown, .main .stMarkdown p, .main .stMarkdown li,
+.main .stMarkdown span, .main .stMarkdown div {{
+    color: var(--fg-primary) !important;
+}}
+.main .stMarkdown h1, .main .stMarkdown h2,
+.main .stMarkdown h3, .main .stMarkdown h4 {{
+    color: var(--fg-primary) !important;
+}}
+.main .stMarkdown a {{ color: var(--accent-cool) !important; }}
+[data-testid="stCaptionContainer"], .stCaption,
+[data-testid="stCaptionContainer"] p, .stCaption p,
+.main small, .main caption {{
+    color: var(--fg-secondary) !important;
+}}
+.main code, .stMarkdown code, kbd, samp {{
+    background: var(--bg-elev) !important;
+    color: var(--accent) !important;
+    border: 1px solid var(--border-dim) !important;
+    border-radius: 4px !important;
+    padding: 1px 6px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}}
+.main pre, .stMarkdown pre {{
+    background: var(--bg-elev) !important;
+    color: var(--fg-primary) !important;
+    border: 1px solid var(--border-dim) !important;
+    border-radius: 8px !important;
+}}
+.main pre code {{
+    background: transparent !important;
+    border: none !important;
+    color: var(--fg-primary) !important;
+    padding: 0 !important;
+}}
+[data-testid="stMetric"] {{ color: var(--fg-primary) !important; }}
+[data-testid="stMetricLabel"] {{ color: var(--fg-secondary) !important; }}
+[data-testid="stMetricValue"] {{ color: var(--fg-primary) !important; }}
+
+/* ══════ Selectbox dropdown items ══════ */
+[data-baseweb="popover"] [role="option"],
+[data-baseweb="select"] [role="listbox"] li,
+[data-baseweb="menu"] li {{
+    background: var(--bg-elev) !important;
+    color: var(--fg-primary) !important;
+}}
+[data-baseweb="popover"] [role="option"]:hover,
+[data-baseweb="menu"] li:hover {{
+    background: var(--accent-soft) !important;
+    color: var(--accent) !important;
+}}
+[data-baseweb="popover"] ul, [data-baseweb="menu"] ul {{
+    background: var(--bg-elev) !important;
+    border: 1px solid var(--border) !important;
+}}
+
+/* ══════ Tooltip / help icon ══════ */
+[data-baseweb="tooltip"] {{
+    background: var(--bg-elev) !important;
+    color: var(--fg-primary) !important;
+    border: 1px solid var(--border) !important;
 }}
 
 hr {{ border: none !important; border-top: 1px solid var(--border-dim) !important; margin: 14px 0 !important; }}
@@ -720,8 +787,13 @@ _BASE = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     font=dict(color=T['plot_text'], family="Inter, sans-serif", size=11),
 )
-_PLOT_GRID = T['plot_grid']
-_PLOT_TEXT = T['plot_text']
+_PLOT_GRID     = T['plot_grid']
+_PLOT_TEXT     = T['plot_text']
+_PLOT_TEXT_DIM = T['fg_muted']
+_PLOT_LINE     = T['border_strong']
+_HOVER_BG      = T['canvas_panel']
+_HOVER_BORDER  = T['border']
+_HOVER_TEXT    = T['fg_primary']
 
 
 def build_gauges(preds):
@@ -736,19 +808,19 @@ def build_gauges(preds):
             value=val,
             number=dict(font=dict(size=22, color=col, family="Rajdhani, sans-serif"),
                         suffix=f" {unit}"),
-            title=dict(text=f"<b>{label}</b>", font=dict(size=9, color="#b0cef0")),
+            title=dict(text=f"<b>{label}</b>", font=dict(size=9, color=_PLOT_TEXT)),
             gauge=dict(
                 axis=dict(range=[lo, hi], tickwidth=1,
-                          tickcolor="rgba(180,210,255,0.28)",
-                          tickfont=dict(size=7, color="rgba(180,210,255,0.35)")),
+                          tickcolor=_PLOT_LINE,
+                          tickfont=dict(size=7, color=_PLOT_TEXT_DIM)),
                 bar=dict(color=col, thickness=0.26),
-                bgcolor="rgba(4,7,18,0)", borderwidth=0,
+                bgcolor="rgba(0,0,0,0)", borderwidth=0,
                 steps=[
-                    dict(range=[lo, lo+(hi-lo)*0.33], color="rgba(255,255,255,0.02)"),
-                    dict(range=[lo+(hi-lo)*0.33, lo+(hi-lo)*0.66], color="rgba(255,255,255,0.04)"),
-                    dict(range=[lo+(hi-lo)*0.66, hi], color="rgba(255,255,255,0.07)"),
+                    dict(range=[lo, lo+(hi-lo)*0.33], color=T['accent_soft']),
+                    dict(range=[lo+(hi-lo)*0.33, lo+(hi-lo)*0.66], color=T['border_dim']),
+                    dict(range=[lo+(hi-lo)*0.66, hi], color=T['border']),
                 ],
-                threshold=dict(line=dict(color="rgba(255,255,255,0.8)", width=2),
+                threshold=dict(line=dict(color=T['fg_primary'], width=2),
                                thickness=0.75, value=val),
             ),
         ), row=1, col=i)
@@ -767,32 +839,32 @@ def build_radar(preds):
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(
         r=vals_c, theta=cats_c, fill="toself",
-        fillcolor="rgba(0,100,200,0.18)",
-        line=dict(color="#00aaff", width=2.5),
-        marker=dict(size=7, color="#60d0ff"),
+        fillcolor=T['accent_soft'],
+        line=dict(color=T['accent'], width=2.5),
+        marker=dict(size=7, color=T['accent']),
         name="Predicted",
     ))
     fig.add_trace(go.Scatterpolar(
         r=[50]*6, theta=cats_c, fill="toself",
-        fillcolor="rgba(255,255,255,0.03)",
-        line=dict(color="rgba(255,255,255,0.18)", width=1, dash="dot"),
+        fillcolor="rgba(0,0,0,0)",
+        line=dict(color=T['border_strong'], width=1, dash="dot"),
         name="Dataset avg.",
     ))
     fig.update_layout(
         **_BASE,
         polar=dict(
-            bgcolor="rgba(4,7,18,0.5)",
+            bgcolor="rgba(0,0,0,0)",
             radialaxis=dict(range=[0,100], ticksuffix="%",
-                            gridcolor="rgba(180,210,255,0.09)",
-                            linecolor="rgba(180,210,255,0.09)",
-                            tickfont=dict(size=7, color="rgba(180,210,255,0.38)")),
-            angularaxis=dict(gridcolor="rgba(180,210,255,0.09)",
-                             linecolor="rgba(180,210,255,0.14)",
-                             tickfont=dict(size=10, color="#b0cef0")),
+                            gridcolor=_PLOT_GRID,
+                            linecolor=_PLOT_GRID,
+                            tickfont=dict(size=7, color=_PLOT_TEXT_DIM)),
+            angularaxis=dict(gridcolor=_PLOT_GRID,
+                             linecolor=_PLOT_LINE,
+                             tickfont=dict(size=10, color=_PLOT_TEXT)),
         ),
         showlegend=True,
-        legend=dict(bgcolor="rgba(4,7,18,0.75)", bordercolor="rgba(0,150,255,0.28)",
-                    borderwidth=1, font=dict(size=10)),
+        legend=dict(bgcolor=_HOVER_BG, bordercolor=_HOVER_BORDER,
+                    borderwidth=1, font=dict(size=10, color=_HOVER_TEXT)),
         height=320, margin=dict(l=38, r=38, t=28, b=18),
     )
     return fig
@@ -919,7 +991,7 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
              for c in liq_c]
     fig.add_trace(go.Scatter(
         x=liq_c, y=liq_T,
-        line=dict(color="rgba(255,245,170,0.90)", width=2.2),
+        line=dict(color="#d4a048", width=2.2),
         mode="lines", name="Liquidus",
         hovertemplate="Liquidus: %{y:.0f} °C<extra></extra>"))
 
@@ -945,13 +1017,13 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
     # Solidus (δ region lower boundary)
     fig.add_trace(go.Scatter(
         x=[0, C_PER], y=[MELT, PERIT],
-        line=dict(color="rgba(160,220,255,0.60)", width=1.7, dash="dot"),
+        line=dict(color="#5a9cc4", width=1.7, dash="dot"),
         mode="lines", name="δ Solidus"))
 
     # Ms
     fig.add_trace(go.Scatter(
         x=[0, C_EUT+0.2], y=[Ms_val, Ms_val],
-        line=dict(color="rgba(170,150,255,0.78)", width=1.6, dash="dashdot"),
+        line=dict(color="#7a5fc2", width=1.8, dash="dashdot"),
         mode="lines",
         name=f"Ms = {Ms_val:.0f} °C",
         hovertemplate="Martensite start: %{y:.0f} °C<extra></extra>"))
@@ -960,7 +1032,7 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
     if Bs_val > Ms_val + 30:
         fig.add_trace(go.Scatter(
             x=[0, C_EUT+0.2], y=[Bs_val, Bs_val],
-            line=dict(color="rgba(200,150,255,0.58)", width=1.3, dash="dashdot"),
+            line=dict(color="#9060c2", width=1.4, dash="dashdot"),
             mode="lines",
             name=f"Bs = {Bs_val:.0f} °C",
             hovertemplate="Bainite start: %{y:.0f} °C<extra></extra>"))
@@ -969,13 +1041,13 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
     fig.add_trace(go.Scatter(
         x=[C_EUT], y=[A1], mode="markers",
         marker=dict(size=12, color="#ffd700", symbol="diamond",
-                    line=dict(color="white", width=2)),
+                    line=dict(color=T['fg_primary'], width=2)),
         name="S — Eutectoid",
         hovertemplate="<b>Eutectoid (S)</b><br>0.76 wt%  ·  723 °C<extra></extra>"))
     fig.add_trace(go.Scatter(
         x=[C_PER], y=[PERIT], mode="markers",
         marker=dict(size=12, color="#60c4ff", symbol="triangle-up",
-                    line=dict(color="white", width=2)),
+                    line=dict(color=T['fg_primary'], width=2)),
         name="P — Peritectic",
         hovertemplate="<b>Peritectic (P)</b><br>0.17 wt%  ·  1495 °C<extra></extra>"))
 
@@ -999,11 +1071,11 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
             name="Temper", showlegend=False))
     fig.add_trace(go.Scatter(
         x=[C_val, C_val], y=[0, 1640],
-        line=dict(color="rgba(80,230,190,0.70)", width=1.6, dash="dot"),
+        line=dict(color="#3aa082", width=1.8, dash="dot"),
         mode="lines+text",
         text=[f"C={C_val:.2f}%", ""],
         textposition="top right",
-        textfont=dict(size=9, color="#50e3c2"),
+        textfont=dict(size=9, color="#3aa082"),
         name=f"C = {C_val:.2f}%", showlegend=False))
 
     # ── Heating + cooling arrows ──
@@ -1035,7 +1107,7 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
     fig.add_trace(go.Scatter(
         x=[C_val], y=[ht_temp], mode="markers",
         marker=dict(size=14, color=op_color, symbol="circle",
-                    line=dict(color="white", width=2.6)),
+                    line=dict(color=T['fg_primary'], width=2.6)),
         name="Operating point",
         hovertemplate=(f"<b>Austenitizing condition</b><br>"
                        f"C = {C_val:.3f} wt%<br>T = {ht_temp:.0f} °C<br>"
@@ -1055,7 +1127,7 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
         fig.add_annotation(
             x=lx, y=ly, text=f"<b>{ltxt}</b>",
             showarrow=False,
-            font=dict(size=11, color="rgba(230,240,255,0.82)"),
+            font=dict(size=11, color=_PLOT_TEXT),
             bgcolor="rgba(0,0,0,0)", xref="x", yref="y")
 
     fig.update_layout(
@@ -1063,28 +1135,28 @@ def build_phase_diagram(C_val, ht_temp, t_temp, process_key, cool_medium,
         title=dict(
             text=(f"<b>Fe-C Phase Diagram</b>  ·  "
                   f"Current phase: <span style='color:{op_color}'>{op_phase}</span>"),
-            font=dict(size=13), x=0.5, xanchor="center"),
+            font=dict(size=13, color=T['fg_primary']), x=0.5, xanchor="center"),
         xaxis=dict(
             title="Carbon Content (wt%)",
             range=[0, MAX_C],
-            gridcolor="rgba(180,210,255,0.05)",
+            gridcolor=_PLOT_GRID,
             zeroline=False,
-            tickfont=dict(size=10),
+            tickfont=dict(size=10, color=_PLOT_TEXT),
             tickformat=".2f"),
         yaxis=dict(
             title="Temperature (°C)",
             range=[0, 1650],
-            gridcolor="rgba(180,210,255,0.05)",
+            gridcolor=_PLOT_GRID,
             zeroline=False,
-            tickfont=dict(size=10)),
+            tickfont=dict(size=10, color=_PLOT_TEXT)),
         legend=dict(
             orientation="h",
             x=0.5, y=-0.16,
             xanchor="center", yanchor="top",
-            bgcolor="rgba(4,10,24,0.88)",
-            bordercolor="rgba(61,184,255,0.22)",
+            bgcolor=_HOVER_BG,
+            bordercolor=_HOVER_BORDER,
             borderwidth=1,
-            font=dict(size=9, color="#c0d8f0"),
+            font=dict(size=9, color=_HOVER_TEXT),
             itemwidth=30,
         ),
         height=680,
@@ -1264,11 +1336,11 @@ cx.fillStyle='#ffd700';cx.save();cx.translate(cX(CE),tY(A1));cx.rotate(Math.PI/4
 cx.fillStyle='rgba(255,215,0,0.6)';cx.font='9px sans-serif';cx.textAlign='left';cx.fillText('S (Eutectoid)',cX(CE)+10,tY(A1)+3);
 cx.fillStyle='#60c4ff';cx.beginPath();cx.moveTo(cX(CP),tY(PER)-4);cx.lineTo(cX(CP)-4,tY(PER)+4);cx.lineTo(cX(CP)+4,tY(PER)+4);cx.fill();
 cx.fillStyle='rgba(96,196,255,0.6)';cx.fillText('P (Peritectic)',cX(CP)+10,tY(PER)+3);
-cx.fillStyle='rgba(200,220,245,0.75)';cx.font='bold 13px Rajdhani,sans-serif';cx.textAlign='center';
+cx.fillStyle=CFG.theme.fg;cx.font='bold 13px Rajdhani,sans-serif';cx.textAlign='center';
 cx.fillText('Fe\u2013C Phase Diagram  \u00b7  '+CFG.opPh,W/2,20);
-cx.fillStyle='rgba(160,185,220,0.35)';cx.font='10px sans-serif';
+cx.fillStyle=CFG.theme.fgSec;cx.font='10px sans-serif';
 cx.fillText('Hover to explore phases  \u00b7  C='+CFG.C.toFixed(2)+'%  T='+CFG.htT.toFixed(0)+'\u00b0C',W/2,MT-5);
-cx.strokeStyle='rgba(160,185,220,0.12)';cx.lineWidth=1;cx.strokeRect(ML,MT,PW,PH);
+cx.strokeStyle=CFG.theme.border;cx.lineWidth=1;cx.strokeRect(ML,MT,PW,PH);
 requestAnimationFrame(draw)}draw();
 var tt=document.getElementById('tt'),ttp=document.getElementById('tp'),ttc=document.getElementById('tc'),ttd=document.getElementById('td');
 function showTT(mx,my,px,py){
@@ -1371,10 +1443,12 @@ def build_tt_profile(process_key, ht_temp, t_temp, soak_time, t_time, C=0.35, Mn
     fig.update_layout(
         **_BASE,
         title=dict(text=f"<b>Temperature-Time Profile</b>  - {prof['label']}",
-                   font=dict(size=13), x=0.5, xanchor="center"),
-        xaxis=dict(title="Time (min)", gridcolor="rgba(180,210,255,0.06)"),
+                   font=dict(size=13, color=T['fg_primary']), x=0.5, xanchor="center"),
+        xaxis=dict(title="Time (min)", gridcolor=_PLOT_GRID,
+                   tickfont=dict(color=_PLOT_TEXT)),
         yaxis=dict(title="Temperature (C)", range=[0, max(ht_temp*1.12, 250)],
-                   gridcolor="rgba(180,210,255,0.06)"),
+                   gridcolor=_PLOT_GRID, tickfont=dict(color=_PLOT_TEXT)),
+        legend=dict(font=dict(color=_HOVER_TEXT)),
         height=370, margin=dict(l=55, r=80, t=50, b=50),
     )
     return fig
@@ -1535,7 +1609,7 @@ def build_cct_diagram(C, Mn=0.85, Si=0.25, Ni=0.20, Cr=1.05, Mo=0.20,
     ]:
         fig.add_annotation(
             x=np.log10(x), y=y, text=f"<b>{txt}</b>",
-            showarrow=False, font=dict(size=10, color="rgba(200,220,245,0.55)"),
+            showarrow=False, font=dict(size=10, color=_PLOT_TEXT),
             xref="x", yref="y",
         )
 
@@ -1545,26 +1619,26 @@ def build_cct_diagram(C, Mn=0.85, Si=0.25, Ni=0.20, Cr=1.05, Mo=0.20,
             text=(f"<b>CCT Diagram</b>  ·  "
                   f"C={C:.2f}  Mn={Mn:.2f}  Cr={Cr:.2f}  Mo={Mo:.2f}  "
                   f"(ASTM GS {ASTM_gs})"),
-            font=dict(size=12), x=0.5, xanchor="center",
+            font=dict(size=12, color=T['fg_primary']), x=0.5, xanchor="center",
         ),
         xaxis=dict(
             title="Time (seconds)",
             type="log",
             range=[-1, 5],
-            gridcolor="rgba(180,210,255,0.06)",
-            tickfont=dict(size=10),
+            gridcolor=_PLOT_GRID,
+            tickfont=dict(size=10, color=_PLOT_TEXT),
         ),
         yaxis=dict(
             title="Temperature (C)",
             range=[0, max(ht_temp + 50, Ae3 + 60)],
-            gridcolor="rgba(180,210,255,0.06)",
-            tickfont=dict(size=10),
+            gridcolor=_PLOT_GRID,
+            tickfont=dict(size=10, color=_PLOT_TEXT),
         ),
         legend=dict(
-            bgcolor="rgba(4,10,24,0.88)",
-            bordercolor="rgba(61,184,255,0.18)",
+            bgcolor=_HOVER_BG,
+            bordercolor=_HOVER_BORDER,
             borderwidth=1,
-            font=dict(size=9, color="#c0d8f0"),
+            font=dict(size=9, color=_HOVER_TEXT),
             x=1.02, y=1, xanchor="left",
         ),
         height=560,
@@ -1993,10 +2067,10 @@ cx.fillStyle=(D.theme&&D.theme.text)||'rgba(160,185,220,0.62)';cx.font='9px mono
 for(T=0;T<=MXT;T+=400)cx.fillText(T+'\u00b0',ML-4,tYf(T)+3);
 cx.textAlign='center';cx.fillText('wt% C',ML+PW/2,H-4);
 for(c=0;c<=MXC;c+=0.5)cx.fillText(c.toFixed(1),cX(c),H-MB+14);
-cx.fillStyle='rgba(200,220,245,0.28)';cx.font='bold 9px sans-serif';cx.textAlign='center';
+cx.fillStyle=(D.theme&&D.theme.fgSec)||'rgba(200,220,245,0.48)';cx.font='bold 9px sans-serif';cx.textAlign='center';
 var lbs=[[0.38,280,'\u03b1+P'],[0.50,1020,'\u03b3'],[1.1,1400,'L']];
 for(i=0;i<lbs.length;i++)cx.fillText(lbs[i][2],cX(lbs[i][0]),tYf(lbs[i][1]));
-cx.strokeStyle='rgba(160,185,220,0.10)';cx.lineWidth=1;cx.strokeRect(ML,MT,PW,PH)}
+cx.strokeStyle=(D.theme&&D.theme.border)||'rgba(160,185,220,0.10)';cx.lineWidth=1;cx.strokeRect(ML,MT,PW,PH)}
 function setFrame(idx){
 ci=Math.max(0,Math.min(NF-1,idx));var f=F[ci];
 stageEl.textContent=f.s;tvalEl.textContent=Math.round(f.T);
