@@ -33,74 +33,74 @@ st.set_page_config(
 
 THEMES = {
     "dark": {
-        "bg_base":      "#0B0F19",
-        "bg_sink":      "#070A12",
-        "bg_elev":      "#11162A",
-        "bg_surface":   "rgba(18,24,42,0.78)",
-        "bg_surface_2": "rgba(24,32,52,0.55)",
-        "bg_glass":     "rgba(11,15,25,0.72)",
-        "border_dim":      "rgba(180,200,230,0.07)",
-        "border":          "rgba(180,200,230,0.14)",
-        "border_strong":   "rgba(180,200,230,0.28)",
-        "fg_primary":   "#E8EDF5",
-        "fg_secondary": "#A2AEC4",
-        "fg_muted":     "#6A7588",
-        "accent":       "#C9A56B",
-        "accent_dim":   "rgba(201,165,107,0.55)",
-        "accent_soft":  "rgba(201,165,107,0.10)",
-        "accent_cool":  "#6FA8D6",
+        "bg_base":      "#101114",
+        "bg_sink":      "#0A0B0D",
+        "bg_elev":      "#181A1E",
+        "bg_surface":   "rgba(24,26,30,0.86)",
+        "bg_surface_2": "rgba(30,32,37,0.62)",
+        "bg_glass":     "rgba(16,17,20,0.78)",
+        "border_dim":      "rgba(235,238,244,0.06)",
+        "border":          "rgba(235,238,244,0.12)",
+        "border_strong":   "rgba(235,238,244,0.22)",
+        "fg_primary":   "#EBEEF2",
+        "fg_secondary": "#9197A2",
+        "fg_muted":     "#5C626E",
+        "accent":       "#EBEEF2",
+        "accent_dim":   "rgba(235,238,244,0.45)",
+        "accent_soft":  "rgba(235,238,244,0.08)",
+        "accent_cool":  "#B8BEC8",
         "accent_warn":  "#D4A056",
         "accent_err":   "#C85858",
         "accent_ok":    "#5FB58A",
-        "plot_bg":      "rgba(11,15,25,1)",
-        "plot_grid":    "rgba(180,200,230,0.06)",
-        "plot_text":    "#A2AEC4",
-        "canvas_bg":    "#0B0F19",
-        "canvas_panel": "rgba(11,15,25,0.92)",
-        "canvas_grid":  "rgba(160,185,220,0.10)",
-        "canvas_text":  "rgba(220,230,245,0.62)",
-        "hero_a":       "#C9A56B",
-        "hero_b":       "#E4BD83",
-        "hero_c":       "#6FA8D6",
-        "shadow":       "0 4px 24px rgba(0,0,0,0.35)",
-        "app_grad":     "radial-gradient(ellipse 90% 55% at 50% 0%, rgba(201,165,107,0.045) 0%, transparent 55%), linear-gradient(180deg, #0B0F19 0%, #070A12 100%)",
-        "sidebar_grad": "linear-gradient(180deg, #0D1322 0%, #080C18 100%)",
-        "header_bg":    "rgba(11,15,25,0.85)",
+        "plot_bg":      "rgba(16,17,20,1)",
+        "plot_grid":    "rgba(235,238,244,0.06)",
+        "plot_text":    "#9197A2",
+        "canvas_bg":    "#101114",
+        "canvas_panel": "rgba(16,17,20,0.92)",
+        "canvas_grid":  "rgba(235,238,244,0.08)",
+        "canvas_text":  "rgba(235,238,244,0.62)",
+        "hero_a":       "#FFFFFF",
+        "hero_b":       "#C4C8D0",
+        "hero_c":       "#7A8090",
+        "shadow":       "0 4px 24px rgba(0,0,0,0.40)",
+        "app_grad":     "#101114",
+        "sidebar_grad": "#0E0F12",
+        "header_bg":    "rgba(16,17,20,0.88)",
     },
     "light": {
-        "bg_base":      "#F4F6FA",
-        "bg_sink":      "#EAEEF5",
+        "bg_base":      "#F6F7F8",
+        "bg_sink":      "#EDEEF0",
         "bg_elev":      "#FFFFFF",
-        "bg_surface":   "rgba(255,255,255,0.92)",
-        "bg_surface_2": "rgba(248,250,254,0.85)",
-        "bg_glass":     "rgba(255,255,255,0.78)",
-        "border_dim":      "rgba(40,56,82,0.06)",
-        "border":          "rgba(40,56,82,0.13)",
-        "border_strong":   "rgba(40,56,82,0.24)",
-        "fg_primary":   "#1A2030",
-        "fg_secondary": "#4D596F",
-        "fg_muted":     "#8794AB",
-        "accent":       "#8B6E3B",
-        "accent_dim":   "rgba(139,110,59,0.45)",
-        "accent_soft":  "rgba(139,110,59,0.08)",
-        "accent_cool":  "#3E6E96",
+        "bg_surface":   "rgba(255,255,255,0.94)",
+        "bg_surface_2": "rgba(248,249,251,0.88)",
+        "bg_glass":     "rgba(255,255,255,0.82)",
+        "border_dim":      "rgba(21,23,28,0.06)",
+        "border":          "rgba(21,23,28,0.12)",
+        "border_strong":   "rgba(21,23,28,0.22)",
+        "fg_primary":   "#15171C",
+        "fg_secondary": "#525866",
+        "fg_muted":     "#8A91A0",
+        "accent":       "#15171C",
+        "accent_dim":   "rgba(21,23,28,0.45)",
+        "accent_soft":  "rgba(21,23,28,0.06)",
+        "accent_cool":  "#525866",
         "accent_warn":  "#A66A18",
         "accent_err":   "#A63838",
         "accent_ok":    "#2E7E54",
         "plot_bg":      "rgba(255,255,255,1)",
-        "plot_grid":    "rgba(40,56,82,0.10)",
-        "plot_text":    "#4D596F",
+        "plot_grid":    "rgba(21,23,28,0.08)",
+        "plot_text":    "#525866",
         "canvas_bg":    "#FFFFFF",
         "canvas_panel": "rgba(255,255,255,0.96)",
-        "canvas_grid":  "rgba(40,56,82,0.10)",
-        "canvas_text":  "rgba(40,56,82,0.72)",
-        "hero_a":       "#8B6E3B",
-        "hero_b":       "#B58D4D",
-        "hero_c":       "#3E6E96",
-        "shadow":       "0 2px 14px rgba(40,56,82,0.10)",
-        "app_grad":     "radial-gradient(ellipse 90% 55% at 50% 0%, rgba(139,110,59,0.05) 0%, transparent 55%), linear-gradient(180deg, #F4F6FA 0%, #EAEEF5 100%)",
-        "sidebar_grad": "linear-gradient(180deg, #FFFFFF 0%, #F0F3F8 100%)",
-        "header_bg":    "rgba(255,255,255,0.88)",
+        "canvas_grid":  "rgba(21,23,28,0.10)",
+        "canvas_text":  "rgba(21,23,28,0.72)",
+        "hero_a":       "#15171C",
+        "hero_b":       "#3A3F4A",
+        "hero_c":       "#7A8090",
+        "shadow":       "0 2px 14px rgba(21,23,28,0.08)",
+        "app_grad":     "#F6F7F8",
+        "sidebar_grad": "#FFFFFF",
+        "header_bg":    "rgba(255,255,255,0.90)",
     },
 }
 
@@ -256,7 +256,7 @@ header[data-testid="stHeader"] {{
 .stButton > button[kind="primary"] {{
     background: var(--accent) !important;
     border: 1px solid var(--accent) !important;
-    color: {('#0B0F19' if IS_DARK else '#FFFFFF')} !important;
+    color: {('#101114' if IS_DARK else '#FFFFFF')} !important;
     border-radius: 8px !important;
     font-family: 'Rajdhani', sans-serif !important;
     font-weight: 700 !important;
@@ -266,11 +266,11 @@ header[data-testid="stHeader"] {{
     padding: 0.80rem 1.2rem !important;
     transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.22s ease, background-color 0.22s ease !important;
     width: 100% !important;
-    box-shadow: 0 4px 14px var(--accent-soft) !important;
+    box-shadow: {('0 4px 14px rgba(0,0,0,0.35)' if IS_DARK else '0 4px 14px rgba(21,23,28,0.18)')} !important;
 }}
 .stButton > button[kind="primary"]:hover {{
-    filter: brightness(1.06);
-    box-shadow: 0 6px 18px var(--accent-dim) !important;
+    filter: {('brightness(0.94)' if IS_DARK else 'brightness(1.18)')};
+    box-shadow: {('0 6px 18px rgba(0,0,0,0.45)' if IS_DARK else '0 6px 18px rgba(21,23,28,0.28)')} !important;
     transform: translateY(-1px);
 }}
 .stButton > button[kind="primary"]:active {{ transform: translateY(0); filter: brightness(0.96); }}
@@ -1855,8 +1855,8 @@ def build_immersive_simulation_html(process_key, C, ht_temp, soak_time, cool_med
             "panel":  th['canvas_panel'], "text": th['canvas_text'],
             "grid":   th['canvas_grid'],  "border": th['border'],
             "fg":     th['fg_primary'],   "fgSec": th['fg_secondary'],
-            "accent": th['accent'],       "stage": th['accent'],
-            "tval":   th['accent_warn'],
+            "accent": th['accent'],       "stage": th['accent_cool'],
+            "tval":   th['accent'],
         },
     })
     return _SIM_HTML.replace("__CFG__", cfg)
